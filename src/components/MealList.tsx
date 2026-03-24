@@ -17,9 +17,9 @@ export function MealList({ meals, onRemove }: Props) {
   }
 
   return (
-    <ul className="space-y-2">
+    <ul role="list" className="space-y-2">
       {meals.map((meal, i) => (
-        <li key={meal.id || i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3 border border-gray-800">
+        <li role="listitem" key={meal.id || i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3 border border-gray-800">
           <div>
             <p className="font-medium text-white text-sm">{meal.foodName}</p>
             <p className="text-xs text-gray-400">{meal.quantity}{meal.unit}</p>
