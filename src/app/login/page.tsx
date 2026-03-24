@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
@@ -28,9 +29,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 max-w-sm w-full text-center shadow-2xl">
-        <div className="text-6xl mb-4">🥗</div>
+        <div className="flex justify-center mb-4">
+          <Image src="/logo.jpg" alt="Easy Calories" width={96} height={96} className="rounded-2xl shadow-lg" />
+        </div>
         <h1 className="text-3xl font-bold text-white mb-2">Easy Calories</h1>
-        <p className="text-gray-400 mb-8 text-sm">Registra tus calorías de forma sencilla</p>
+        <p className="text-gray-400 mb-2 text-sm">Track as easy as possible</p>
         <button
           onClick={loginWithGoogle}
           className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-semibold py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors"

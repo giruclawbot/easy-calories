@@ -17,8 +17,9 @@ export function NavBar({ user }: { user: User }) {
   return (
     <nav aria-label="Navegación principal" className="bg-gray-900 border-b border-gray-800 px-4 py-3">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
-        <Link href="/dashboard" className="text-xl font-bold text-emerald-400 hover:text-emerald-300">
-          🥗 Easy Calories
+        <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <Image src="/logo.jpg" alt="Easy Calories" width={36} height={36} className="rounded-full" />
+          <span className="font-bold text-white hidden sm:block">Easy Calories</span>
         </Link>
         <div className="flex items-center gap-3">
           {user.photoURL && (
