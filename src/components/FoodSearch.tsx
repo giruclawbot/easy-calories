@@ -7,7 +7,7 @@ import { searchFoods, FoodItem, NutritionFacts } from '@/lib/usda'
 
 const schema = z.object({
   query: z.string().min(2, 'Escribe al menos 2 caracteres'),
-  quantity: z.number().min(1).max(5000),
+  quantity: z.coerce.number().min(1, 'Mínimo 1').max(5000),
   unit: z.enum(['g', 'oz', 'ml', 'porción']),
 })
 
@@ -23,7 +23,8 @@ export function FoodSearch({ onAdd }: Props) {
   const [searching, setSearching] = useState(false)
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(schema) as any,
     defaultValues: { quantity: 100, unit: 'g' },
   })
 
