@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { setStoredGoal } from '@/lib/goals'
 
 const schema = z.object({
   sex: z.enum(['male', 'female']),
@@ -12,6 +11,11 @@ const schema = z.object({
   heightCm: z.coerce.number().min(100).max(250),
   activity: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
   goal: z.enum(['lose', 'maintain', 'gain']),
+  targetWeightKg: z.preprocess(
+    (val) => (val === '' || val == null ? undefined : Number(val)),
+    z.number().min(20).max(300).optional()
+  ),
+  ratePerWeek: z.enum(['slow', 'moderate', 'fast']).optional(),
 })
 
 type FormData = z.output<typeof schema>
@@ -32,19 +36,41 @@ const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   very_active: 1.9,
 }
 
+const RATE_LABELS: Record<string, string> = {
+  slow: 'Lento (0.25 kg/sem) — más músculo',
+  moderate: 'Moderado (0.5 kg/sem) — recomendado',
+  fast: 'Rápido (0.75 kg/sem) — más disciplina',
+}
+
+const RATE_DEFICIT: Record<string, number> = {
+  slow: 275,
+  moderate: 550,
+  fast: 825,
+}
+
 interface Props {
   onGoalSet: (goal: number) => void
   onClose: () => void
 }
 
 export function CalorieCalculator({ onGoalSet, onClose }: Props) {
-  const [result, setResult] = useState<{ bmr: number; tdee: number; recommended: number } | null>(null)
+  const [result, setResult] = useState<{
+    bmr: number
+    tdee: number
+    recommended: number
+    weeksToGoal: number | null
+    targetWeightKg?: number
+    goal: string
+  } | null>(null)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
-    defaultValues: { sex: 'male', activity: 'moderate', goal: 'maintain' },
+    defaultValues: { sex: 'male', activity: 'moderate', goal: 'maintain', ratePerWeek: 'moderate' },
   })
+
+  const goalValue = watch('goal')
+  const targetWeightValue = watch('targetWeightKg')
 
   function calculate(data: FormData) {
     let bmr: number
@@ -54,16 +80,43 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
       bmr = 10 * data.weightKg + 6.25 * data.heightCm - 5 * data.age - 161
     }
     const tdee = Math.round(bmr * ACTIVITY_MULTIPLIERS[data.activity])
+
     let recommended = tdee
-    if (data.goal === 'lose') recommended = tdee - 500
-    if (data.goal === 'gain') recommended = tdee + 300
-    recommended = Math.max(1200, recommended)
-    setResult({ bmr: Math.round(bmr), tdee, recommended })
+    let weeklyChange = 0
+    let weeksToGoal: number | null = null
+    const rate = data.ratePerWeek || 'moderate'
+
+    if (data.goal === 'lose') {
+      const deficit = RATE_DEFICIT[rate]
+      recommended = Math.max(1200, tdee - deficit)
+      weeklyChange = -deficit / 7700
+      if (data.targetWeightKg && data.targetWeightKg < data.weightKg) {
+        const kgToLose = data.weightKg - data.targetWeightKg
+        weeksToGoal = Math.ceil(kgToLose / Math.abs(weeklyChange * 7))
+      }
+    } else if (data.goal === 'gain') {
+      const surplus = RATE_DEFICIT[rate]
+      recommended = tdee + surplus
+      weeklyChange = surplus / 7700
+      if (data.targetWeightKg && data.targetWeightKg > data.weightKg) {
+        const kgToGain = data.targetWeightKg - data.weightKg
+        weeksToGoal = Math.ceil(kgToGain / (weeklyChange * 7))
+      }
+    }
+
+    recommended = Math.round(recommended)
+    setResult({
+      bmr: Math.round(bmr),
+      tdee,
+      recommended,
+      weeksToGoal,
+      targetWeightKg: data.targetWeightKg,
+      goal: data.goal,
+    })
   }
 
   function applyGoal() {
     if (!result) return
-    setStoredGoal(result.recommended)
     onGoalSet(result.recommended)
     onClose()
   }
@@ -141,6 +194,39 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
               </div>
             </div>
 
+            {(goalValue === 'lose' || goalValue === 'gain') && (
+              <>
+                <div>
+                  <label htmlFor="calc-target" className="text-sm text-gray-400 block mb-1.5">
+                    Peso objetivo (kg)
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="calc-target"
+                      {...register('targetWeightKg')}
+                      type="number"
+                      placeholder={goalValue === 'lose' ? 'ej: 65' : 'ej: 80'}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
+                    />
+                    <span className="absolute right-2 top-2.5 text-xs text-gray-500">kg</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-400 block mb-1.5">Ritmo semanal</label>
+                  <div className="space-y-2">
+                    {Object.entries(RATE_LABELS).map(([v, l]) => (
+                      <label key={v} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" {...register('ratePerWeek')} value={v} className="sr-only peer" />
+                        <div className="w-4 h-4 rounded-full border-2 border-gray-600 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 flex-shrink-0" />
+                        <span className="text-sm text-gray-300 peer-checked:text-emerald-300">{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors">
               Calcular mi meta
             </button>
@@ -160,6 +246,25 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
               ))}
             </div>
             <p className="text-xs text-gray-500 text-center">Basado en Mifflin-St Jeor · Ajustado por actividad y objetivo</p>
+
+            {result.recommended < 1500 && (
+              <p className="text-xs text-yellow-400 text-center">⚠️ Meta muy baja — considera consultar un nutriólogo</p>
+            )}
+
+            {result.weeksToGoal && result.targetWeightKg && (
+              <div className="bg-gray-800 rounded-xl p-3 text-center border border-gray-700">
+                <p className="text-white text-sm">
+                  🎯 Alcanzarás <span className="font-bold text-emerald-400">{result.targetWeightKg} kg</span> en aproximadamente
+                </p>
+                <p className="text-2xl font-bold text-white mt-1">
+                  {result.weeksToGoal < 4
+                    ? `${result.weeksToGoal} semanas`
+                    : `${Math.round(result.weeksToGoal / 4.3)} meses`}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Basado en tu ritmo seleccionado · puede variar</p>
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button onClick={() => setResult(null)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 rounded-xl text-sm transition-colors">
                 ← Recalcular

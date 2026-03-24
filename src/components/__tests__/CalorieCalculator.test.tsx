@@ -130,4 +130,37 @@ describe('CalorieCalculator', () => {
     expect(onGoalSet).toHaveBeenCalledWith(expect.any(Number))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('calculates weeksToGoal for lose goal with targetWeight', async () => {
+    render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
+
+    fireEvent.click(screen.getByText('📉 Perder'))
+    fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '30' } })
+    fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '80' } })
+    fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '175' } })
+    fireEvent.change(screen.getByLabelText('Peso objetivo (kg)'), { target: { value: '70' } })
+    fireEvent.click(screen.getByText('Calcular mi meta'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Recomendada')).toBeInTheDocument()
+    })
+    // Should show estimated timeline
+    expect(screen.getByText(/Alcanzarás/)).toBeInTheDocument()
+  })
+
+  it('calculates weeksToGoal for gain goal with targetWeight', async () => {
+    render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
+
+    fireEvent.click(screen.getByText('📈 Ganar'))
+    fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '25' } })
+    fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '170' } })
+    fireEvent.change(screen.getByLabelText('Peso objetivo (kg)'), { target: { value: '75' } })
+    fireEvent.click(screen.getByText('Calcular mi meta'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Recomendada')).toBeInTheDocument()
+    })
+    expect(screen.getByText(/Alcanzarás/)).toBeInTheDocument()
+  })
 })

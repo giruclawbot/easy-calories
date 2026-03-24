@@ -1,13 +1,13 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { format, subDays } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
-import { getDayData, removeMeal, updateMeal, getWeekData, DayData, Meal } from '@/lib/firestore'
+import { getDayData, removeMeal, updateMeal, getWeekData, getUserSettings, saveUserSettings, DayData, Meal } from '@/lib/firestore'
 import { MealList } from '@/components/MealList'
 import { CalorieChart } from '@/components/CalorieChart'
 import { DayPicker } from '@/components/DayPicker'
-import { getStoredGoal, DEFAULT_GOAL } from '@/lib/goals'
+import { getCachedGoal, setCachedGoal, DEFAULT_GOAL } from '@/lib/goals'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
 import { EditMealModal } from '@/components/EditMealModal'
 
@@ -22,13 +22,24 @@ export default function DashboardPage() {
   const [showCalculator, setShowCalculator] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
 
-  const last7Days = Array.from({ length: 7 }, (_, i) =>
-    format(subDays(new Date(), 6 - i), 'yyyy-MM-dd')
+  const last7Days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd')),
+    []
   )
 
   useEffect(() => {
-    setGoal(getStoredGoal())
-  }, [])
+    // Inmediato desde caché (offline-first)
+    setGoal(getCachedGoal())
+    // Luego sincronizar con Firestore
+    if (user) {
+      getUserSettings(user.uid).then(settings => {
+        if (settings?.calorieGoal) {
+          setGoal(settings.calorieGoal)
+          setCachedGoal(settings.calorieGoal)
+        }
+      })
+    }
+  }, [user])
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -47,7 +58,18 @@ export default function DashboardPage() {
 
   async function handleRemoveMeal(meal: Meal) {
     if (!user) return
+    // Optimistic update
+    setDayData(prev => {
+      if (!prev) return prev
+      const updatedMeals = prev.meals.filter(m => m.id !== meal.id)
+      return {
+        ...prev,
+        meals: updatedMeals,
+        totalCalories: updatedMeals.reduce((s, m) => s + m.calories, 0),
+      }
+    })
     await removeMeal(user.uid, selectedDate, meal)
+    // Reload to sync with server
     loadData()
   }
 
@@ -170,7 +192,13 @@ export default function DashboardPage() {
       {/* Calculator modal */}
       {showCalculator && (
         <CalorieCalculator
-          onGoalSet={(g) => { setGoal(g) }}
+          onGoalSet={async (g) => {
+            setGoal(g)
+            setCachedGoal(g)
+            if (user) {
+              await saveUserSettings(user.uid, { calorieGoal: g })
+            }
+          }}
           onClose={() => setShowCalculator(false)}
         />
       )}

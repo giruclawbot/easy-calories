@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,6 +21,7 @@ export function FoodSearch({ onAdd }: Props) {
   const [results, setResults] = useState<FoodItem[]>([])
   const [selected, setSelected] = useState<FoodItem | null>(null)
   const [searching, setSearching] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,12 +31,32 @@ export function FoodSearch({ onAdd }: Props) {
 
   const quantity = watch('quantity') || 100
 
-  const doSearch = useCallback(async (q: string) => {
+  async function doSearch(q: string) {
     if (q.length < 2) return
     setSearching(true)
     const foods = await searchFoods(q)
     setResults(foods)
     setSearching(false)
+  }
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    register('query').onChange(e)
+    setSelected(null)
+    const value = e.target.value
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (value.length < 2) {
+      setResults([])
+      return
+    }
+    debounceRef.current = setTimeout(() => {
+      doSearch(value)
+    }, 400)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [])
 
   function onSubmit(data: FormData) {
@@ -70,11 +91,7 @@ export function FoodSearch({ onAdd }: Props) {
             {...register('query')}
             placeholder="Buscar alimento... ej: manzana, pollo, arroz"
             className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 pr-10"
-            onChange={e => {
-              register('query').onChange(e)
-              doSearch(e.target.value)
-              setSelected(null)
-            }}
+            onChange={handleQueryChange}
           />
           {searching && (
             <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />

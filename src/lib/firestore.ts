@@ -92,3 +92,27 @@ export async function getWeekData(uid: string, dates: string[]): Promise<Record<
   )
   return results
 }
+
+export interface UserSettings {
+  calorieGoal: number
+  updatedAt?: unknown
+}
+
+export async function getUserSettings(uid: string): Promise<UserSettings | null> {
+  const db = getFirebaseDb()
+  if (!db) return null
+  try {
+    const ref = doc(db, 'users', uid, 'settings', 'profile')
+    const snap = await getDoc(ref)
+    return snap.exists() ? (snap.data() as UserSettings) : null
+  } catch {
+    return null
+  }
+}
+
+export async function saveUserSettings(uid: string, settings: Partial<UserSettings>): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'settings', 'profile')
+  await setDoc(ref, { ...settings, updatedAt: serverTimestamp() }, { merge: true })
+}
