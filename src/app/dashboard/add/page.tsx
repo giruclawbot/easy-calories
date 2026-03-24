@@ -6,7 +6,7 @@ import { useAuth } from '@/components/AuthProvider'
 import { FoodSearch } from '@/components/FoodSearch'
 import { BarcodeScanner } from '@/components/BarcodeScanner'
 import { addMeal } from '@/lib/firestore'
-import { FoodItem } from '@/lib/usda'
+import { FoodItem, NutritionFacts } from '@/lib/usda'
 
 export default function AddFoodPage() {
   const { user } = useAuth()
@@ -17,7 +17,7 @@ export default function AddFoodPage() {
 
   const today = format(new Date(), 'yyyy-MM-dd')
 
-  async function handleAdd(meal: { foodName: string; calories: number; quantity: number; unit: string }) {
+  async function handleAdd(meal: { foodName: string; calories: number; quantity: number; unit: string; nutrition?: NutritionFacts }) {
     if (!user) return
     setAdding(true)
     await addMeal(user.uid, today, {
@@ -31,7 +31,7 @@ export default function AddFoodPage() {
 
   function handleBarcodeFound(food: FoodItem) {
     setShowScanner(false)
-    handleAdd({ foodName: food.description, calories: food.calories, quantity: 100, unit: 'g' })
+    handleAdd({ foodName: food.description, calories: food.nutrition.calories, quantity: 100, unit: 'g', nutrition: food.nutrition })
   }
 
   return (

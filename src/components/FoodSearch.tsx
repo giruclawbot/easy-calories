@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { searchFoods, FoodItem } from '@/lib/usda'
+import { searchFoods, FoodItem, NutritionFacts } from '@/lib/usda'
 
 const schema = z.object({
   query: z.string().min(2, 'Escribe al menos 2 caracteres'),
@@ -14,7 +14,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 interface Props {
-  onAdd: (meal: { foodName: string; calories: number; quantity: number; unit: string }) => void
+  onAdd: (meal: { foodName: string; calories: number; quantity: number; unit: string; nutrition: NutritionFacts }) => void
 }
 
 export function FoodSearch({ onAdd }: Props) {
@@ -42,9 +42,19 @@ export function FoodSearch({ onAdd }: Props) {
     const ratio = data.quantity / 100
     onAdd({
       foodName: selected.description,
-      calories: Math.round(selected.calories * ratio),
+      calories: Math.round(selected.nutrition.calories * ratio),
       quantity: data.quantity,
       unit: data.unit,
+      nutrition: {
+        calories: Math.round(selected.nutrition.calories * ratio * 10) / 10,
+        protein: Math.round(selected.nutrition.protein * ratio * 10) / 10,
+        carbs: Math.round(selected.nutrition.carbs * ratio * 10) / 10,
+        fat: Math.round(selected.nutrition.fat * ratio * 10) / 10,
+        fiber: Math.round(selected.nutrition.fiber * ratio * 10) / 10,
+        sugar: Math.round(selected.nutrition.sugar * ratio * 10) / 10,
+        sodium: Math.round(selected.nutrition.sodium * ratio * 10) / 10,
+        cholesterol: Math.round(selected.nutrition.cholesterol * ratio * 10) / 10,
+      },
     })
     setSelected(null)
     setResults([])
@@ -81,7 +91,7 @@ export function FoodSearch({ onAdd }: Props) {
                   className="w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-0"
                 >
                   <p className="text-white text-sm font-medium truncate">{food.description}</p>
-                  <p className="text-gray-400 text-xs">{food.brandOwner ? `${food.brandOwner} · ` : ''}{food.calories} kcal/100g</p>
+                  <p className="text-gray-400 text-xs">{food.brandOwner ? `${food.brandOwner} · ` : ''}{food.nutrition.calories} kcal/100g</p>
                 </button>
               </li>
             ))}
@@ -94,7 +104,7 @@ export function FoodSearch({ onAdd }: Props) {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-semibold text-white text-sm">{selected.description}</p>
-              <p className="text-gray-400 text-xs">{selected.calories} kcal/100g</p>
+              <p className="text-gray-400 text-xs">{selected.nutrition.calories} kcal/100g</p>
             </div>
             <button type="button" onClick={() => setSelected(null)} className="text-gray-500 hover:text-white">×</button>
           </div>
@@ -119,9 +129,24 @@ export function FoodSearch({ onAdd }: Props) {
             </select>
           </div>
 
+          {/* Macro preview */}
+          <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+            {[
+              { label: 'Proteína', value: selected.nutrition.protein * (quantity / 100), color: 'text-blue-400' },
+              { label: 'Carbs', value: selected.nutrition.carbs * (quantity / 100), color: 'text-yellow-400' },
+              { label: 'Grasa', value: selected.nutrition.fat * (quantity / 100), color: 'text-orange-400' },
+              { label: 'Fibra', value: selected.nutrition.fiber * (quantity / 100), color: 'text-green-400' },
+            ].map(m => (
+              <div key={m.label} className="bg-gray-700 rounded-lg py-1.5">
+                <p className={`font-bold ${m.color}`}>{Math.round(m.value * 10) / 10}g</p>
+                <p className="text-gray-500">{m.label}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="flex items-center justify-between">
             <p className="text-emerald-400 font-bold text-lg">
-              ≈ {Math.round(selected.calories * (quantity / 100))} kcal
+              ≈ {Math.round(selected.nutrition.calories * (quantity / 100))} kcal
             </p>
             <button
               type="submit"

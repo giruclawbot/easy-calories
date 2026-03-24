@@ -2,14 +2,16 @@ import { getFirebaseDb } from './firebase'
 import {
   doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp
 } from 'firebase/firestore'
+import type { NutritionFacts } from './usda'
 
 export interface Meal {
   id: string
   foodName: string
-  calories: number
+  calories: number       // mantener por compatibilidad
   quantity: number
   unit: string
   timestamp: string
+  nutrition?: NutritionFacts  // nuevo, nullable para meals viejos
 }
 
 export interface DayData {
