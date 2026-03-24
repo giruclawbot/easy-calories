@@ -7,8 +7,8 @@ import { getDayData, removeMeal, getWeekData, DayData, Meal } from '@/lib/firest
 import { MealList } from '@/components/MealList'
 import { CalorieChart } from '@/components/CalorieChart'
 import { DayPicker } from '@/components/DayPicker'
-
-const GOAL = 2000
+import { getStoredGoal, DEFAULT_GOAL } from '@/lib/goals'
+import { CalorieCalculator } from '@/components/CalorieCalculator'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -17,10 +17,16 @@ export default function DashboardPage() {
   const [dayData, setDayData] = useState<DayData | null>(null)
   const [weekData, setWeekData] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [goal, setGoal] = useState(DEFAULT_GOAL)
+  const [showCalculator, setShowCalculator] = useState(false)
 
   const last7Days = Array.from({ length: 7 }, (_, i) =>
     format(subDays(new Date(), 6 - i), 'yyyy-MM-dd')
   )
+
+  useEffect(() => {
+    setGoal(getStoredGoal())
+  }, [])
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -45,8 +51,8 @@ export default function DashboardPage() {
 
   const totalCalories = dayData?.totalCalories || 0
   const meals = dayData?.meals || []
-  const percentage = Math.min(100, Math.round((totalCalories / GOAL) * 100))
-  const remaining = Math.max(0, GOAL - totalCalories)
+  const percentage = Math.min(100, Math.round((totalCalories / goal) * 100))
+  const remaining = Math.max(0, goal - totalCalories)
 
   return (
     <div className="space-y-5">
@@ -57,14 +63,14 @@ export default function DashboardPage() {
           <p className="text-xs text-gray-400 mt-1">Consumidas</p>
         </div>
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
-          <p className="text-3xl font-bold text-white">{GOAL}</p>
+          <p className="text-3xl font-bold text-white">{goal}</p>
           <p className="text-xs text-gray-400 mt-1">Meta</p>
         </div>
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
-          <p className={`text-3xl font-bold ${totalCalories > GOAL ? 'text-red-400' : 'text-blue-400'}`}>
-            {totalCalories > GOAL ? `+${totalCalories - GOAL}` : remaining}
+          <p className={`text-3xl font-bold ${totalCalories > goal ? 'text-red-400' : 'text-blue-400'}`}>
+            {totalCalories > goal ? `+${totalCalories - goal}` : remaining}
           </p>
-          <p className="text-xs text-gray-400 mt-1">{totalCalories > GOAL ? 'Exceso' : 'Restantes'}</p>
+          <p className="text-xs text-gray-400 mt-1">{totalCalories > goal ? 'Exceso' : 'Restantes'}</p>
         </div>
       </div>
 
@@ -72,11 +78,23 @@ export default function DashboardPage() {
       <div>
         <div className="h-2.5 bg-gray-800 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${totalCalories > GOAL ? 'bg-red-500' : 'bg-emerald-500'}`}
+            className={`h-full rounded-full transition-all duration-500 ${totalCalories > goal ? 'bg-red-500' : 'bg-emerald-500'}`}
             style={{ width: `${percentage}%` }}
           />
         </div>
         <p className="text-right text-xs text-gray-500 mt-1">{percentage}% de la meta</p>
+      </div>
+
+      {/* Goal settings + Day picker */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Mis calorías</h2>
+        <button
+          onClick={() => setShowCalculator(true)}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-400 transition-colors"
+          aria-label="Configurar meta de calorías"
+        >
+          ⚙️ Meta: {goal} kcal
+        </button>
       </div>
 
       {/* Day picker */}
@@ -100,7 +118,18 @@ export default function DashboardPage() {
       )}
 
       {/* Weekly chart */}
-      <CalorieChart data={weekData} goal={GOAL} />
+      <CalorieChart data={weekData} goal={goal} />
+
+      {/* Footer */}
+      <p className="text-center text-xs text-gray-700 pt-2">Easy Calories v{process.env.NEXT_PUBLIC_APP_VERSION} · Giru 👾</p>
+
+      {/* Calculator modal */}
+      {showCalculator && (
+        <CalorieCalculator
+          onGoalSet={(g) => { setGoal(g) }}
+          onClose={() => setShowCalculator(false)}
+        />
+      )}
     </div>
   )
 }

@@ -16,6 +16,7 @@ export function DayPicker({ selectedDate, onChange }: Props) {
       <button
         onClick={() => onChange(format(subDays(date, 1), 'yyyy-MM-dd'))}
         className="text-gray-400 hover:text-white transition-colors px-2 py-1"
+        aria-label="Día anterior"
       >
         ‹
       </button>
@@ -36,6 +37,7 @@ export function DayPicker({ selectedDate, onChange }: Props) {
         onClick={() => onChange(format(addDays(date, 1), 'yyyy-MM-dd'))}
         disabled={selectedDate >= today}
         className="text-gray-400 hover:text-white transition-colors px-2 py-1 disabled:opacity-30 disabled:cursor-not-allowed"
+        aria-label="Día siguiente"
       >
         ›
       </button>

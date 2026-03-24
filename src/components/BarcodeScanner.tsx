@@ -73,7 +73,7 @@ export function BarcodeScanner({ onFound, onClose }: Props) {
   }, [onFound])
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-label="Escáner de código de barras">
       <div className="bg-gray-900 rounded-2xl w-full max-w-sm overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           <h3 className="font-bold text-white">📷 Escanear código de barras</h3>

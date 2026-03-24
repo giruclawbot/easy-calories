@@ -14,7 +14,7 @@ export function NavBar({ user }: { user: User }) {
   }
 
   return (
-    <nav className="bg-gray-900 border-b border-gray-800 px-4 py-3">
+    <nav aria-label="Navegación principal" className="bg-gray-900 border-b border-gray-800 px-4 py-3">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <Link href="/dashboard" className="text-xl font-bold text-emerald-400 hover:text-emerald-300">
           🥗 Easy Calories
@@ -29,7 +29,10 @@ export function NavBar({ user }: { user: User }) {
               className="rounded-full"
             />
           )}
-          <span className="text-sm text-gray-300 hidden sm:block">{user.displayName}</span>
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-sm text-gray-300">{user.displayName}</span>
+            <span className="text-xs text-gray-600">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+          </div>
           <button
             onClick={handleSignOut}
             className="text-sm text-gray-400 hover:text-white transition-colors"

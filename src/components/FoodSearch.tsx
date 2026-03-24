@@ -72,9 +72,9 @@ export function FoodSearch({ onAdd }: Props) {
         {errors.query && <p className="text-red-400 text-xs mt-1">{errors.query.message}</p>}
 
         {results.length > 0 && !selected && (
-          <ul className="mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+          <ul role="listbox" className="mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
             {results.map(food => (
-              <li key={food.fdcId}>
+              <li key={food.fdcId} role="option" aria-selected={false}>
                 <button
                   type="button"
                   onClick={() => { setSelected(food); setResults([]) }}
