@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { GoalDetails } from '@/lib/firestore'
 
 const schema = z.object({
   sex: z.enum(['male', 'female']),
@@ -49,11 +50,17 @@ const RATE_DEFICIT: Record<string, number> = {
 }
 
 interface Props {
-  onGoalSet: (goal: number) => void
+  onGoalSet: (calorieGoal: number, goalDetails?: GoalDetails) => void
   onClose: () => void
+  initialValues?: {
+    weightKg?: number
+    heightCm?: number
+    age?: number
+    sex?: 'male' | 'female'
+  }
 }
 
-export function CalorieCalculator({ onGoalSet, onClose }: Props) {
+export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) {
   const [result, setResult] = useState<{
     bmr: number
     tdee: number
@@ -62,15 +69,23 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
     targetWeightKg?: number
     goal: string
   } | null>(null)
+  const [pendingGoalDetails, setPendingGoalDetails] = useState<GoalDetails | null>(null)
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
-    defaultValues: { sex: 'male', activity: 'moderate', goal: 'maintain', ratePerWeek: 'moderate' },
+    defaultValues: {
+      sex: initialValues?.sex ?? 'male',
+      age: initialValues?.age,
+      weightKg: initialValues?.weightKg,
+      heightCm: initialValues?.heightCm,
+      activity: 'moderate',
+      goal: 'maintain',
+      ratePerWeek: 'moderate',
+    },
   })
 
   const goalValue = watch('goal')
-  const targetWeightValue = watch('targetWeightKg')
 
   function calculate(data: FormData) {
     let bmr: number
@@ -105,6 +120,17 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
     }
 
     recommended = Math.round(recommended)
+
+    const goalDetails: GoalDetails = {
+      calorieGoal: recommended,
+      goalType: data.goal,
+      targetWeightKg: data.targetWeightKg,
+      ratePerWeek: data.ratePerWeek as GoalDetails['ratePerWeek'],
+      weeksToGoal: weeksToGoal ?? undefined,
+      bmr: Math.round(bmr),
+      tdee,
+    }
+
     setResult({
       bmr: Math.round(bmr),
       tdee,
@@ -113,11 +139,12 @@ export function CalorieCalculator({ onGoalSet, onClose }: Props) {
       targetWeightKg: data.targetWeightKg,
       goal: data.goal,
     })
+    setPendingGoalDetails(goalDetails)
   }
 
   function applyGoal() {
     if (!result) return
-    onGoalSet(result.recommended)
+    onGoalSet(result.recommended, pendingGoalDetails ?? undefined)
     onClose()
   }
 

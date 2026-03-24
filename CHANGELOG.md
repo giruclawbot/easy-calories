@@ -31,6 +31,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] - 2026-03-24
+
+### Added
+- User Profile page (/profile): personal data (sex, age, weight, height), language selector, goal details view
+- Goal details stored in Firestore (goalType, targetWeightKg, ratePerWeek, weeksToGoal, BMR, TDEE)
+- CalorieCalculator pre-fills with saved profile data when opened (initialValues prop)
+- Goal details panel in dashboard (calorie goal, target weight, estimated timeline)
+- Macro targets calculated from user profile (WHO/AMDR standards): protein based on body weight, carbs/fat % of TDEE, fiber 14g/1000kcal, sugar <10% energy
+- Macro progress bars with current/target values per macro
+- i18n foundation: I18nProvider, es.json + en.json, useI18n() hook, loadMessages(), t() helper
+- Language selector in Profile page (ES/EN, persisted in Firestore + localStorage)
+- NavBar link to Profile page
+
+### Changed
+- CalorieCalculator onGoalSet now receives full GoalDetails object as second argument
+- Dashboard loads full UserProfile instead of simple calorieGoal
+- Macro totals panel redesigned with progress bars and per-macro targets
+- UserSettings replaced by UserProfile with backward compat aliases
+
+---
+
 ## [1.4.0] - 2026-03-24
 
 ### Added

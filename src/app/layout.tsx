@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
 import { PWAInstaller } from '@/components/PWAInstaller'
+import { I18nProvider } from '@/components/I18nProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -81,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }),
           }}
         />
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider><I18nProvider>{children}</I18nProvider></AuthProvider>
         <PWAInstaller />
       </body>
     </html>
