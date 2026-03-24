@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -8,7 +9,7 @@ interface Props {
   goal?: number
 }
 
-export function CalorieChart({ data, goal = 2000 }: Props) {
+export const CalorieChart = React.memo(function CalorieChart({ data, goal = 2000 }: Props) {
   const chartData = Object.entries(data).map(([date, calories]) => ({
     day: format(parseISO(date), 'EEE', { locale: es }),
     calories,
@@ -38,4 +39,4 @@ export function CalorieChart({ data, goal = 2000 }: Props) {
       <p className="text-xs text-gray-500 mt-2 text-center">Meta: {goal} kcal/día · Rojo = sobre la meta</p>
     </div>
   )
-}
+})

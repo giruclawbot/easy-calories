@@ -31,6 +31,25 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] - 2026-03-24
+
+### Added
+- Calorie goal stored in Firestore (offline-first with localStorage cache)
+- CalorieCalculator: target weight field and weekly pace selector (slow/moderate/fast)
+- Estimated weeks/months to reach target weight
+- Health standards: WHO-based minimum floor (1200 kcal), safety warnings
+- Debounce (400ms) on food search to reduce unnecessary API calls
+- React.memo on CalorieChart to prevent unnecessary re-renders
+- useMemo for last7Days array in dashboard
+- Optimistic UI for meal removal
+- README.md fully rewritten with architecture docs, data model, offline-first explanation
+
+### Changed
+- Goals: localStorage is now a cache layer, Firestore is the source of truth
+- CalorieCalculator: deficit now uses rate-based approach (slow/moderate/fast)
+
+---
+
 ## [Unreleased]
 
 _(Add new changes here during development)_
