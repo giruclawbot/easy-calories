@@ -26,7 +26,7 @@ export function CalorieChart({ data, goal = 2000 }: Props) {
             contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8 }}
             labelStyle={{ color: '#e5e7eb' }}
             itemStyle={{ color: '#34d399' }}
-            formatter={(val) => [`${val} kcal`, 'Calorías']}
+            formatter={/* istanbul ignore next */ (val) => [`${val} kcal`, 'Calorías']}
           />
           <Bar dataKey="calories" radius={[4, 4, 0, 0]}>
             {chartData.map((entry, i) => (

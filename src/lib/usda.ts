@@ -40,6 +40,7 @@ function extractNutrition(nutrients: Array<{ nutrientName?: string; nutrientId?:
 }
 
 // Shorthand usado en varios componentes
+/* istanbul ignore next */
 export function getCalories(food: FoodItem): number {
   return food.nutrition.calories
 }

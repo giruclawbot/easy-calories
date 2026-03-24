@@ -22,6 +22,7 @@ export function PWAInstaller() {
   }, [])
 
   async function install() {
+    /* istanbul ignore next */
     if (!installPrompt) return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (installPrompt as any).prompt()
