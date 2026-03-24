@@ -23,6 +23,17 @@ export function MealList({ meals, onRemove }: Props) {
           <div>
             <p className="font-medium text-white text-sm">{meal.foodName}</p>
             <p className="text-xs text-gray-400">{meal.quantity}{meal.unit}</p>
+            {meal.nutrition && (
+              <div className="flex gap-2 mt-0.5">
+                {[
+                  { label: 'P', value: meal.nutrition.protein, color: 'text-blue-400' },
+                  { label: 'C', value: meal.nutrition.carbs, color: 'text-yellow-400' },
+                  { label: 'G', value: meal.nutrition.fat, color: 'text-orange-400' },
+                ].map(m => (
+                  <span key={m.label} className={`text-xs ${m.color}`}>{m.label}: {Math.round(m.value)}g</span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-emerald-400 font-bold">{meal.calories} kcal</span>
