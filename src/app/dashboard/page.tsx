@@ -3,13 +3,22 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { format, subDays } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
-import { getDayData, removeMeal, updateMeal, getWeekData, getUserSettings, saveUserSettings, DayData, Meal } from '@/lib/firestore'
+import { getDayData, removeMeal, updateMeal, getWeekData, getUserProfile, saveUserProfile, DayData, Meal, UserProfile, GoalDetails } from '@/lib/firestore'
 import { MealList } from '@/components/MealList'
 import { CalorieChart } from '@/components/CalorieChart'
 import { DayPicker } from '@/components/DayPicker'
 import { getCachedGoal, setCachedGoal, DEFAULT_GOAL } from '@/lib/goals'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
 import { EditMealModal } from '@/components/EditMealModal'
+
+function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
+  const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
+  const fat = Math.round(calorieGoal * 0.28 / 9)
+  const carbs = Math.round((calorieGoal - protein * 4 - fat * 9) / 4)
+  const fiber = Math.round(calorieGoal / 1000 * 14)
+  const sugar = Math.round(calorieGoal * 0.10 / 4)
+  return { protein, carbs, fat, fiber, sugar, sodium: 2300, cholesterol: 300 }
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -19,6 +28,7 @@ export default function DashboardPage() {
   const [weekData, setWeekData] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [goal, setGoal] = useState(DEFAULT_GOAL)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [showCalculator, setShowCalculator] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
 
@@ -28,14 +38,13 @@ export default function DashboardPage() {
   )
 
   useEffect(() => {
-    // Inmediato desde caché (offline-first)
     setGoal(getCachedGoal())
-    // Luego sincronizar con Firestore
     if (user) {
-      getUserSettings(user.uid).then(settings => {
-        if (settings?.calorieGoal) {
-          setGoal(settings.calorieGoal)
-          setCachedGoal(settings.calorieGoal)
+      getUserProfile(user.uid).then(profile => {
+        if (profile) {
+          setUserProfile(profile)
+          const g = profile.goalDetails?.calorieGoal ?? profile.calorieGoal
+          if (g) { setGoal(g); setCachedGoal(g) }
         }
       })
     }
@@ -58,7 +67,6 @@ export default function DashboardPage() {
 
   async function handleRemoveMeal(meal: Meal) {
     if (!user) return
-    // Optimistic update
     setDayData(prev => {
       if (!prev) return prev
       const updatedMeals = prev.meals.filter(m => m.id !== meal.id)
@@ -69,7 +77,6 @@ export default function DashboardPage() {
       }
     })
     await removeMeal(user.uid, selectedDate, meal)
-    // Reload to sync with server
     loadData()
   }
 
@@ -78,6 +85,19 @@ export default function DashboardPage() {
     await updateMeal(user.uid, selectedDate, oldMeal, newMeal)
     setEditingMeal(null)
     loadData()
+  }
+
+  async function handleGoalSet(calorieGoal: number, goalDetails?: GoalDetails) {
+    setGoal(calorieGoal)
+    setCachedGoal(calorieGoal)
+    if (user) {
+      const mergedGoalDetails: GoalDetails = goalDetails
+        ? { ...goalDetails, calorieGoal }
+        : { calorieGoal, goalType: 'maintain' }
+      const updated: Partial<UserProfile> = { calorieGoal, goalDetails: mergedGoalDetails }
+      setUserProfile(prev => prev ? { ...prev, ...updated } : { ...updated })
+      await saveUserProfile(user.uid, updated)
+    }
   }
 
   const totalCalories = dayData?.totalCalories || 0
@@ -98,6 +118,8 @@ export default function DashboardPage() {
     },
     { protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 }
   )
+
+  const macroTargets = getMacroTargets(userProfile, goal)
 
   return (
     <div className="space-y-5">
@@ -130,23 +152,65 @@ export default function DashboardPage() {
         <p className="text-right text-xs text-gray-500 mt-1">{percentage}% de la meta</p>
       </div>
 
-      {/* Daily macro totals */}
-      {meals.length > 0 && (
-        <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Nutrientes del día</p>
-          <div className="grid grid-cols-5 gap-2 text-center">
-            {[
-              { label: 'Proteína', value: totals.protein, unit: 'g', color: 'text-blue-400', bg: 'bg-blue-900/20' },
-              { label: 'Carbs', value: totals.carbs, unit: 'g', color: 'text-yellow-400', bg: 'bg-yellow-900/20' },
-              { label: 'Grasa', value: totals.fat, unit: 'g', color: 'text-orange-400', bg: 'bg-orange-900/20' },
-              { label: 'Fibra', value: totals.fiber, unit: 'g', color: 'text-green-400', bg: 'bg-green-900/20' },
-              { label: 'Azúcar', value: totals.sugar, unit: 'g', color: 'text-pink-400', bg: 'bg-pink-900/20' },
-            ].map(m => (
-              <div key={m.label} className={`${m.bg} rounded-lg py-2`}>
-                <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}g</p>
-                <p className="text-xs text-gray-500 mt-0.5">{m.label}</p>
+      {/* Goal details card */}
+      {userProfile?.goalDetails && (
+        <div className="bg-gray-900 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-400">Tu meta</h3>
+            <button onClick={() => setShowCalculator(true)} className="text-xs text-emerald-400">Ajustar</button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-lg font-bold text-emerald-400">{userProfile.goalDetails.calorieGoal}</p>
+              <p className="text-xs text-gray-500">kcal/día</p>
+            </div>
+            {userProfile.goalDetails.targetWeightKg && (
+              <div>
+                <p className="text-lg font-bold text-white">{userProfile.goalDetails.targetWeightKg} kg</p>
+                <p className="text-xs text-gray-500">objetivo</p>
               </div>
-            ))}
+            )}
+            {userProfile.goalDetails.weeksToGoal && (
+              <div>
+                <p className="text-lg font-bold text-white">
+                  {userProfile.goalDetails.weeksToGoal < 4
+                    ? `~${userProfile.goalDetails.weeksToGoal}sem`
+                    : `~${Math.round(userProfile.goalDetails.weeksToGoal / 4.3)}m`}
+                </p>
+                <p className="text-xs text-gray-500">estimado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Daily macro totals with targets */}
+      {meals.length > 0 && (
+        <div className="bg-gray-900 rounded-2xl p-4">
+          <h3 className="text-sm font-semibold text-gray-400 mb-3">Resumen de macros</h3>
+          <div className="space-y-2">
+            {([
+              { key: 'protein', label: 'Proteína', color: 'bg-blue-500', unit: 'g' },
+              { key: 'carbs', label: 'Carbs', color: 'bg-yellow-500', unit: 'g' },
+              { key: 'fat', label: 'Grasa', color: 'bg-orange-500', unit: 'g' },
+              { key: 'fiber', label: 'Fibra', color: 'bg-green-500', unit: 'g' },
+              { key: 'sugar', label: 'Azúcar', color: 'bg-pink-500', unit: 'g' },
+            ] as const).map(({ key, label, color, unit }) => {
+              const val = Math.round(totals[key])
+              const target = macroTargets[key]
+              const pct = Math.min(100, Math.round((val / target) * 100))
+              return (
+                <div key={key}>
+                  <div className="flex justify-between text-xs mb-0.5">
+                    <span className="text-gray-400">{label}</span>
+                    <span className="text-gray-300">{val}{unit} <span className="text-gray-600">/ {target}{unit}</span></span>
+                  </div>
+                  <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -192,14 +256,14 @@ export default function DashboardPage() {
       {/* Calculator modal */}
       {showCalculator && (
         <CalorieCalculator
-          onGoalSet={async (g) => {
-            setGoal(g)
-            setCachedGoal(g)
-            if (user) {
-              await saveUserSettings(user.uid, { calorieGoal: g })
-            }
-          }}
+          onGoalSet={handleGoalSet}
           onClose={() => setShowCalculator(false)}
+          initialValues={{
+            weightKg: userProfile?.weightKg,
+            heightCm: userProfile?.heightCm,
+            age: userProfile?.age,
+            sex: userProfile?.sex,
+          }}
         />
       )}
 

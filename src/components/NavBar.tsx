@@ -35,6 +35,9 @@ export function NavBar({ user }: { user: User }) {
             <span className="text-sm text-gray-300">{user.displayName}</span>
             <span className="text-xs text-gray-600">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
           </div>
+          <Link href="/profile" className="text-gray-400 hover:text-white transition-colors text-sm">
+            👤 Perfil
+          </Link>
           <button
             onClick={handleSignOut}
             className="text-sm text-gray-400 hover:text-white transition-colors"

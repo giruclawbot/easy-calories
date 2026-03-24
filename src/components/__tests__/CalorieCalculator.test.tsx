@@ -127,7 +127,7 @@ describe('CalorieCalculator', () => {
     await waitFor(() => screen.getByText('Usar esta meta'))
     fireEvent.click(screen.getByText('Usar esta meta'))
 
-    expect(onGoalSet).toHaveBeenCalledWith(expect.any(Number))
+    expect(onGoalSet).toHaveBeenCalledWith(expect.any(Number), expect.anything())
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -162,5 +162,18 @@ describe('CalorieCalculator', () => {
       expect(screen.getByText('Recomendada')).toBeInTheDocument()
     })
     expect(screen.getByText(/Alcanzarás/)).toBeInTheDocument()
+  })
+
+  it('pre-fills form with initialValues', () => {
+    render(
+      <CalorieCalculator
+        onGoalSet={onGoalSet}
+        onClose={onClose}
+        initialValues={{ sex: 'female', age: 28, weightKg: 62, heightCm: 163 }}
+      />
+    )
+    expect(screen.getByLabelText('Edad')).toHaveValue(28)
+    expect(screen.getByLabelText('Peso')).toHaveValue(62)
+    expect(screen.getByLabelText('Altura')).toHaveValue(163)
   })
 })

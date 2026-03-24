@@ -98,21 +98,49 @@ export interface UserSettings {
   updatedAt?: unknown
 }
 
-export async function getUserSettings(uid: string): Promise<UserSettings | null> {
+export interface GoalDetails {
+  calorieGoal: number
+  goalType: 'lose' | 'maintain' | 'gain'
+  targetWeightKg?: number
+  ratePerWeek?: 'slow' | 'moderate' | 'fast'
+  weeksToGoal?: number
+  bmr?: number
+  tdee?: number
+}
+
+export interface UserProfile {
+  // Personal data
+  weightKg?: number
+  heightCm?: number
+  age?: number
+  sex?: 'male' | 'female'
+  locale?: string
+  // Goal details (replaces simple calorieGoal)
+  goalDetails?: GoalDetails
+  // Legacy (keep for backward compat)
+  calorieGoal?: number
+  updatedAt?: unknown
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const db = getFirebaseDb()
   if (!db) return null
   try {
     const ref = doc(db, 'users', uid, 'settings', 'profile')
     const snap = await getDoc(ref)
-    return snap.exists() ? (snap.data() as UserSettings) : null
+    return snap.exists() ? (snap.data() as UserProfile) : null
   } catch {
     return null
   }
 }
 
-export async function saveUserSettings(uid: string, settings: Partial<UserSettings>): Promise<void> {
+export async function saveUserProfile(uid: string, profile: Partial<UserProfile>): Promise<void> {
   const db = getFirebaseDb()
   if (!db) return
   const ref = doc(db, 'users', uid, 'settings', 'profile')
-  await setDoc(ref, { ...settings, updatedAt: serverTimestamp() }, { merge: true })
+  await setDoc(ref, { ...profile, updatedAt: serverTimestamp() }, { merge: true })
 }
+
+// Keep backward compat
+export const getUserSettings = getUserProfile
+export const saveUserSettings = saveUserProfile
