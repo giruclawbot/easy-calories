@@ -2,6 +2,7 @@ const GOAL_KEY = 'ec_calorie_goal'
 export const DEFAULT_GOAL = 2000
 
 export function getStoredGoal(): number {
+  /* istanbul ignore next */
   if (typeof window === 'undefined') return DEFAULT_GOAL
   const stored = localStorage.getItem(GOAL_KEY)
   return stored ? parseInt(stored) : DEFAULT_GOAL
