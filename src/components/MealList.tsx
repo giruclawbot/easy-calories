@@ -4,9 +4,10 @@ import { Meal } from '@/lib/firestore'
 interface Props {
   meals: Meal[]
   onRemove?: (meal: Meal) => void
+  onEdit?: (meal: Meal) => void
 }
 
-export function MealList({ meals, onRemove }: Props) {
+export function MealList({ meals, onRemove, onEdit }: Props) {
   if (meals.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -37,6 +38,15 @@ export function MealList({ meals, onRemove }: Props) {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-emerald-400 font-bold">{meal.calories} kcal</span>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(meal)}
+                className="text-gray-500 hover:text-blue-400 transition-colors p-1"
+                aria-label={`Editar ${meal.foodName}`}
+              >
+                ✏️
+              </button>
+            )}
             {onRemove && (
               <button
                 onClick={() => onRemove(meal)}

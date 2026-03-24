@@ -63,6 +63,25 @@ export async function removeMeal(uid: string, date: string, meal: Meal): Promise
   })
 }
 
+export async function updateMeal(uid: string, date: string, oldMeal: Meal, newMeal: Meal): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'days', date)
+  const existing = await getDoc(ref)
+  if (!existing.exists()) return
+  const data = existing.data() as DayData
+
+  // Replace old meal with new meal in array, recalculate total
+  const updatedMeals = data.meals.map((m: Meal) => m.id === oldMeal.id ? newMeal : m)
+  const newTotal = updatedMeals.reduce((sum: number, m: Meal) => sum + m.calories, 0)
+
+  await updateDoc(ref, {
+    meals: updatedMeals,
+    totalCalories: newTotal,
+    updatedAt: serverTimestamp(),
+  })
+}
+
 export async function getWeekData(uid: string, dates: string[]): Promise<Record<string, number>> {
   const results: Record<string, number> = {}
   await Promise.all(
