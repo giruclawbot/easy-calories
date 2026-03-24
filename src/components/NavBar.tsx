@@ -1,6 +1,6 @@
 'use client'
 import { User, signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { getFirebaseAuth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -9,7 +9,8 @@ export function NavBar({ user }: { user: User }) {
   const router = useRouter()
 
   async function handleSignOut() {
-    await signOut(auth)
+    const firebaseAuth = getFirebaseAuth()
+    if (firebaseAuth) await signOut(firebaseAuth)
     router.push('/login')
   }
 

@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { getFirebaseAuth } from '@/lib/firebase'
 import { useAuth } from '@/components/AuthProvider'
 
 export default function LoginPage() {
@@ -15,8 +15,10 @@ export default function LoginPage() {
 
   async function loginWithGoogle() {
     try {
+      const firebaseAuth = getFirebaseAuth()
+      if (!firebaseAuth) return
       const provider = new GoogleAuthProvider()
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(firebaseAuth, provider)
       router.push('/dashboard')
     } catch (err) {
       console.error('Login error:', err)
