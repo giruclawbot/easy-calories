@@ -1,0 +1,67 @@
+import { db } from './firebase'
+import {
+  doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp
+} from 'firebase/firestore'
+
+export interface Meal {
+  id: string
+  foodName: string
+  calories: number
+  quantity: number
+  unit: string
+  timestamp: string
+}
+
+export interface DayData {
+  totalCalories: number
+  meals: Meal[]
+  updatedAt?: unknown
+}
+
+export async function getDayData(uid: string, date: string): Promise<DayData | null> {
+  const ref = doc(db, 'users', uid, 'days', date)
+  const snap = await getDoc(ref)
+  return snap.exists() ? (snap.data() as DayData) : null
+}
+
+export async function addMeal(uid: string, date: string, meal: Meal): Promise<void> {
+  const ref = doc(db, 'users', uid, 'days', date)
+  const existing = await getDoc(ref)
+  if (existing.exists()) {
+    const data = existing.data() as DayData
+    await updateDoc(ref, {
+      meals: arrayUnion(meal),
+      totalCalories: (data.totalCalories || 0) + meal.calories,
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    await setDoc(ref, {
+      totalCalories: meal.calories,
+      meals: [meal],
+      updatedAt: serverTimestamp(),
+    })
+  }
+}
+
+export async function removeMeal(uid: string, date: string, meal: Meal): Promise<void> {
+  const ref = doc(db, 'users', uid, 'days', date)
+  const existing = await getDoc(ref)
+  if (!existing.exists()) return
+  const data = existing.data() as DayData
+  await updateDoc(ref, {
+    meals: arrayRemove(meal),
+    totalCalories: Math.max(0, (data.totalCalories || 0) - meal.calories),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function getWeekData(uid: string, dates: string[]): Promise<Record<string, number>> {
+  const results: Record<string, number> = {}
+  await Promise.all(
+    dates.map(async (date) => {
+      const data = await getDayData(uid, date)
+      results[date] = data?.totalCalories || 0
+    })
+  )
+  return results
+}

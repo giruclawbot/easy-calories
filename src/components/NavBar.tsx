@@ -1,0 +1,43 @@
+'use client'
+import { User, signOut } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+
+export function NavBar({ user }: { user: User }) {
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await signOut(auth)
+    router.push('/login')
+  }
+
+  return (
+    <nav className="bg-gray-900 border-b border-gray-800 px-4 py-3">
+      <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <Link href="/dashboard" className="text-xl font-bold text-emerald-400 hover:text-emerald-300">
+          🥗 Easy Calories
+        </Link>
+        <div className="flex items-center gap-3">
+          {user.photoURL && (
+            <Image
+              src={user.photoURL}
+              alt={user.displayName || 'User'}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+          )}
+          <span className="text-sm text-gray-300 hidden sm:block">{user.displayName}</span>
+          <button
+            onClick={handleSignOut}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Salir
+          </button>
+        </div>
+      </div>
+    </nav>
+  )
+}
