@@ -1,4 +1,4 @@
-import { db } from './firebase'
+import { getFirebaseDb } from './firebase'
 import {
   doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp
 } from 'firebase/firestore'
@@ -19,12 +19,16 @@ export interface DayData {
 }
 
 export async function getDayData(uid: string, date: string): Promise<DayData | null> {
+  const db = getFirebaseDb()
+  if (!db) return null
   const ref = doc(db, 'users', uid, 'days', date)
   const snap = await getDoc(ref)
   return snap.exists() ? (snap.data() as DayData) : null
 }
 
 export async function addMeal(uid: string, date: string, meal: Meal): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
   const ref = doc(db, 'users', uid, 'days', date)
   const existing = await getDoc(ref)
   if (existing.exists()) {
@@ -44,6 +48,8 @@ export async function addMeal(uid: string, date: string, meal: Meal): Promise<vo
 }
 
 export async function removeMeal(uid: string, date: string, meal: Meal): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
   const ref = doc(db, 'users', uid, 'days', date)
   const existing = await getDoc(ref)
   if (!existing.exists()) return
