@@ -7,12 +7,14 @@ import { loadMessages, t as tFn } from '@/lib/translations'
 interface I18nContextValue {
   locale: Locale
   setLocale: (l: Locale) => void
+  syncLocaleFromProfile: (profileLocale: string | undefined) => void
   t: (key: string, vars?: Record<string, string | number>) => string
 }
 
 const I18nContext = createContext<I18nContextValue>({
   locale: 'es',
   setLocale: () => {},
+  syncLocaleFromProfile: () => {},
   t: (key) => key,
 })
 
@@ -32,12 +34,28 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     loadMessages(l).then(setMessages)
   }
 
+  // Call this after loading UserProfile from Firestore.
+  // If Firestore has a locale set and localStorage is empty/default,
+  // the Firestore value wins (new browser scenario).
+  function syncLocaleFromProfile(profileLocale: string | undefined) {
+    if (!profileLocale) return
+    const valid: Locale[] = ['es', 'en']
+    if (!valid.includes(profileLocale as Locale)) return
+    const firestoreLocale = profileLocale as Locale
+    // Always sync — Firestore is source of truth across devices
+    if (firestoreLocale !== locale) {
+      setLocaleState(firestoreLocale)
+      setStoredLocale(firestoreLocale)
+      loadMessages(firestoreLocale).then(setMessages)
+    }
+  }
+
   function t(key: string, vars?: Record<string, string | number>): string {
     return tFn(messages, key, vars)
   }
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
+    <I18nContext.Provider value={{ locale, setLocale, syncLocaleFromProfile, t }}>
       {children}
     </I18nContext.Provider>
   )

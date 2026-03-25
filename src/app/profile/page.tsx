@@ -14,7 +14,7 @@ const LOCALE_LABELS: Record<string, string> = { es: 'Español', en: 'English' }
 export default function ProfilePage() {
   const { user } = useAuth()
   const router = useRouter()
-  const { t, locale, setLocale } = useI18n()
+  const { t, locale, setLocale, syncLocaleFromProfile } = useI18n()
   const [profile, setProfile] = useState<UserProfile>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -36,6 +36,8 @@ export default function ProfilePage() {
       if (p) {
         setProfile(p)
         syncDisplayValues(p, p.unitSystem ?? 'metric')
+        // Sync locale from Firestore — ensures correct language on new browsers
+        syncLocaleFromProfile(p.locale)
       }
       setLoading(false)
     })

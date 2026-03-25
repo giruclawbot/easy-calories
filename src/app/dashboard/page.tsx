@@ -25,7 +25,7 @@ function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { t } = useI18n()
+  const { t, syncLocaleFromProfile } = useI18n()
   const today = format(new Date(), 'yyyy-MM-dd')
   const [selectedDate, setSelectedDate] = useState(today)
   const [dayData, setDayData] = useState<DayData | null>(null)
@@ -49,9 +49,12 @@ export default function DashboardPage() {
           setUserProfile(profile)
           const g = profile.goalDetails?.calorieGoal ?? profile.calorieGoal
           if (g) { setGoal(g); setCachedGoal(g) }
+          // Sync locale from Firestore — ensures correct language on new browsers
+          syncLocaleFromProfile(profile.locale)
         }
       })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const loadData = useCallback(async () => {

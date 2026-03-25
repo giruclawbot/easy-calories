@@ -35,6 +35,7 @@ jest.mock('@/components/I18nProvider', () => ({
   useI18n: () => ({
     locale: 'es',
     setLocale: jest.fn(),
+    syncLocaleFromProfile: jest.fn(),
     t: (key: string, vars?: Record<string, string | number>) => {
       let result = resolveKey(esMessages, key)
       if (vars) {
