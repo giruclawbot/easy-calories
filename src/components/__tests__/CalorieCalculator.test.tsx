@@ -56,7 +56,7 @@ describe('CalorieCalculator', () => {
     render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
 
     // Click the "Perder" radio label
-    fireEvent.click(screen.getByText('📉 Perder'))
+    fireEvent.click(screen.getByText('📉 Perder peso'))
     fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '30' } })
     fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '80' } })
     fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '175' } })
@@ -70,7 +70,7 @@ describe('CalorieCalculator', () => {
   it('calculates with goal=gain', async () => {
     render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
 
-    fireEvent.click(screen.getByText('📈 Ganar'))
+    fireEvent.click(screen.getByText('📈 Ganar peso'))
     fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '25' } })
     fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '65' } })
     fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '170' } })
@@ -106,7 +106,7 @@ describe('CalorieCalculator', () => {
   it('enforces minimum 1200 cal recommendation', async () => {
     render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
     // Very low values + lose goal → recommended hits 1200 floor
-    fireEvent.click(screen.getByText('📉 Perder'))
+    fireEvent.click(screen.getByText('📉 Perder peso'))
     fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '60' } })
     fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '40' } })
     fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '150' } })
@@ -134,7 +134,7 @@ describe('CalorieCalculator', () => {
   it('calculates weeksToGoal for lose goal with targetWeight', async () => {
     render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
 
-    fireEvent.click(screen.getByText('📉 Perder'))
+    fireEvent.click(screen.getByText('📉 Perder peso'))
     fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '30' } })
     fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '80' } })
     fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '175' } })
@@ -151,7 +151,7 @@ describe('CalorieCalculator', () => {
   it('calculates weeksToGoal for gain goal with targetWeight', async () => {
     render(<CalorieCalculator onGoalSet={onGoalSet} onClose={onClose} />)
 
-    fireEvent.click(screen.getByText('📈 Ganar'))
+    fireEvent.click(screen.getByText('📈 Ganar peso'))
     fireEvent.change(screen.getByLabelText('Edad'), { target: { value: '25' } })
     fireEvent.change(screen.getByLabelText('Peso'), { target: { value: '60' } })
     fireEvent.change(screen.getByLabelText('Altura'), { target: { value: '170' } })
