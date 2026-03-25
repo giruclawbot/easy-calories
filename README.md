@@ -4,7 +4,7 @@
 
 A Progressive Web App for tracking daily calorie and macro intake. Search 900,000+ foods from the USDA database, scan barcodes, and visualize weekly progress.
 
-**Live:** https://giru-easy-calories.web.app
+**Live:** https://ezcals.dev
 
 ---
 
