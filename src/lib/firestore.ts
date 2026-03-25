@@ -1,6 +1,7 @@
 import { getFirebaseDb } from './firebase'
 import {
-  doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp
+  doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp,
+  collection, query, where, orderBy, limit as firestoreLimit, getDocs
 } from 'firebase/firestore'
 import type { NutritionFacts } from './usda'
 
@@ -146,3 +147,68 @@ export async function saveUserProfile(uid: string, profile: Partial<UserProfile>
 // Keep backward compat
 export const getUserSettings = getUserProfile
 export const saveUserSettings = saveUserProfile
+
+export interface FrequentFood {
+  foodName: string
+  calories: number
+  quantity: number
+  unit: string
+  nutrition?: NutritionFacts
+  count: number
+  lastUsed: string
+  dismissed: boolean
+}
+
+function toSlug(foodName: string): string {
+  return foodName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 100)
+}
+
+export async function trackFoodUsage(uid: string, meal: Omit<Meal, 'id' | 'timestamp' | 'mealType'>): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const slug = toSlug(meal.foodName)
+  const ref = doc(db, 'users', uid, 'frequentFoods', slug)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    const data = snap.data() as FrequentFood
+    await setDoc(ref, {
+      ...data,
+      foodName: meal.foodName,
+      calories: meal.calories,
+      quantity: meal.quantity,
+      unit: meal.unit,
+      nutrition: meal.nutrition ?? data.nutrition,
+      count: data.count + 1,
+      lastUsed: new Date().toISOString(),
+    })
+  } else {
+    await setDoc(ref, {
+      foodName: meal.foodName,
+      calories: meal.calories,
+      quantity: meal.quantity,
+      unit: meal.unit,
+      nutrition: meal.nutrition ?? null,
+      count: 1,
+      lastUsed: new Date().toISOString(),
+      dismissed: false,
+    })
+  }
+}
+
+export async function getFrequentFoods(uid: string, limitCount = 8): Promise<FrequentFood[]> {
+  const db = getFirebaseDb()
+  if (!db) return []
+  const ref = collection(db, 'users', uid, 'frequentFoods')
+  const q = query(ref, where('dismissed', '==', false), orderBy('count', 'desc'), firestoreLimit(limitCount))
+  const snap = await getDocs(q)
+  const foods = snap.docs.map(d => d.data() as FrequentFood)
+  return foods.filter(f => f.count >= 2)
+}
+
+export async function dismissFrequentFood(uid: string, foodName: string): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const slug = toSlug(foodName)
+  const ref = doc(db, 'users', uid, 'frequentFoods', slug)
+  await setDoc(ref, { dismissed: true }, { merge: true })
+}

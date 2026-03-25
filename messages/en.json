@@ -172,5 +172,11 @@
   "chart": {
     "calories": "Calories",
     "goalLine": "Goal: {goal} kcal/day · Red = over goal"
+  },
+  "quickAdd": {
+    "title": "⚡ Quick add",
+    "add": "+ Add",
+    "dismiss": "Hide",
+    "added": "✓"
   }
 }
