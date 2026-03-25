@@ -154,12 +154,63 @@ export default function DashboardPage() {
         <p className="text-right text-xs text-gray-500 mt-1">{percentage}% {t('dashboard.ofGoal')}</p>
       </div>
 
+      {/* Goal settings + Day picker */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">{t('dashboard.myCalories')}</h2>
+        <button
+          onClick={() => setShowCalculator(true)}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-400 transition-colors"
+          aria-label="Configurar meta de calorías"
+        >
+          ⚙️ {t('dashboard.setGoal')}: {goal} kcal
+        </button>
+      </div>
+
+      {/* Day picker */}
+      <DayPicker selectedDate={selectedDate} onChange={setSelectedDate} />
+
+      {/* Add button */}
+      {selectedDate === today && (
+        <Link
+          href="/dashboard/add"
+          className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors"
+        >
+          {t('dashboard.addMeal')}
+        </Link>
+      )}
+
+      {/* Meal list */}
+      {loading ? (
+        <div className="text-center py-8 text-gray-500 animate-pulse">{t('dashboard.loading')}</div>
+      ) : (
+        <MealList meals={meals} onRemove={selectedDate === today ? handleRemoveMeal : undefined} onEdit={selectedDate === today ? setEditingMeal : undefined} />
+      )}
+
+      {/* Weekly chart */}
+      <CalorieChart data={weekData} goal={goal} />
+
       {/* Goal details card */}
       {userProfile?.goalDetails && (
         <div className="bg-gray-900 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-400">{t('dashboard.yourGoal')}</h3>
             <button onClick={() => setShowCalculator(true)} className="text-xs text-emerald-400">{t('dashboard.adjustGoal')}</button>
+          </div>
+          {/* Goal type badge */}
+          <div className="mb-3">
+            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
+              userProfile.goalDetails.goalType === 'lose'
+                ? 'bg-red-900/40 text-red-300'
+                : userProfile.goalDetails.goalType === 'gain'
+                ? 'bg-blue-900/40 text-blue-300'
+                : 'bg-emerald-900/40 text-emerald-300'
+            }`}>
+              {userProfile.goalDetails.goalType === 'lose'
+                ? t('dashboard.goalTypeLose')
+                : userProfile.goalDetails.goalType === 'gain'
+                ? t('dashboard.goalTypeGain')
+                : t('dashboard.goalTypeMaintain')}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
@@ -216,41 +267,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
-      {/* Goal settings + Day picker */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">{t('dashboard.myCalories')}</h2>
-        <button
-          onClick={() => setShowCalculator(true)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-400 transition-colors"
-          aria-label="Configurar meta de calorías"
-        >
-          ⚙️ {t('dashboard.setGoal')}: {goal} kcal
-        </button>
-      </div>
-
-      {/* Day picker */}
-      <DayPicker selectedDate={selectedDate} onChange={setSelectedDate} />
-
-      {/* Add button */}
-      {selectedDate === today && (
-        <Link
-          href="/dashboard/add"
-          className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {t('dashboard.addMeal')}
-        </Link>
-      )}
-
-      {/* Meal list */}
-      {loading ? (
-        <div className="text-center py-8 text-gray-500 animate-pulse">{t('dashboard.loading')}</div>
-      ) : (
-        <MealList meals={meals} onRemove={selectedDate === today ? handleRemoveMeal : undefined} onEdit={selectedDate === today ? setEditingMeal : undefined} />
-      )}
-
-      {/* Weekly chart */}
-      <CalorieChart data={weekData} goal={goal} />
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-700 pt-2">

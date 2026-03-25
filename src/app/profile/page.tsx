@@ -67,7 +67,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-white text-sm">← Volver</button>
+          <button onClick={() => router.back()} className="text-gray-400 hover:text-white text-sm">{t('profile.back')}</button>
           <h1 className="text-xl font-bold">{t('profile.title')}</h1>
         </div>
 
