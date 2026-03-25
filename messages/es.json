@@ -35,7 +35,10 @@
     "loading": "Cargando...",
     "version": "Easy Calories v{version} · Giru 👾",
     "caloriesThisWeek": "Calorías esta semana",
-    "overGoal": "sobre la meta"
+    "overGoal": "sobre la meta",
+    "goalTypeLose": "📉 Perdiendo peso",
+    "goalTypeMaintain": "⚖️ Manteniendo peso",
+    "goalTypeGain": "📈 Ganando peso"
   },
   "macros": {
     "protein": "Proteína",
@@ -100,7 +103,8 @@
     "targetWeight": "Peso objetivo",
     "weeklyPace": "Ritmo",
     "timeline": "Tiempo estimado",
-    "editGoal": "Editar meta"
+    "editGoal": "Editar meta",
+    "back": "← Volver"
   },
   "food": {
     "search": "Buscar alimento...",
