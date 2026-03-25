@@ -33,7 +33,9 @@
     "setGoal": "Meta",
     "addMeal": "+ Agregar comida",
     "loading": "Cargando...",
-    "version": "Easy Calories v{version} · Giru 👾"
+    "version": "Easy Calories v{version} · Giru 👾",
+    "caloriesThisWeek": "Calorías esta semana",
+    "overGoal": "sobre la meta"
   },
   "macros": {
     "protein": "Proteína",
@@ -128,5 +130,9 @@
     "subtitle": "Track as easy as possible",
     "continueGoogle": "Continuar con Google",
     "terms": "Al iniciar sesión aceptas los términos de uso"
+  },
+  "chart": {
+    "calories": "Calorías",
+    "goalLine": "Meta: {goal} kcal/día · Rojo = sobre la meta"
   }
 }

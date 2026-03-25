@@ -33,7 +33,9 @@
     "setGoal": "Goal",
     "addMeal": "+ Add meal",
     "loading": "Loading...",
-    "version": "Easy Calories v{version} · Giru 👾"
+    "version": "Easy Calories v{version} · Giru 👾",
+    "caloriesThisWeek": "Calories this week",
+    "overGoal": "over goal"
   },
   "macros": {
     "protein": "Protein",
@@ -128,5 +130,9 @@
     "subtitle": "Track as easy as possible",
     "continueGoogle": "Continue with Google",
     "terms": "By signing in you accept the terms of use"
+  },
+  "chart": {
+    "calories": "Calories",
+    "goalLine": "Goal: {goal} kcal/day · Red = over goal"
   }
 }
