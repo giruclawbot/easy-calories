@@ -8,7 +8,7 @@ import { I18nProvider } from '@/components/I18nProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://giru-easy-calories.web.app'),
+  metadataBase: new URL('https://ezcals.dev'),
   title: {
     default: 'Easy Calories — Track as easy as possible',
     template: '%s | Easy Calories',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'es_MX',
-    url: 'https://giru-easy-calories.web.app',
+    url: 'https://ezcals.dev',
     siteName: 'Easy Calories',
     title: 'Easy Calories — Track as easy as possible',
     description: 'Track your daily calories as easy as possible. Search 900,000+ foods, scan barcodes, visualize weekly progress.',
@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               '@type': 'WebApplication',
               name: 'Easy Calories',
               description: 'Track your daily calories as easy as possible.',
-              url: 'https://giru-easy-calories.web.app',
+              url: 'https://ezcals.dev',
               applicationCategory: 'HealthApplication',
               operatingSystem: 'Any',
               offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
