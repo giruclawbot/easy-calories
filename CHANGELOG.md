@@ -31,6 +31,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.9.0] - 2026-03-25
+### Added
+- Quick Add (frequent foods) section on Add Food page
+- Tracks food usage in Firestore (`frequentFoods` subcollection)
+- Shows most-used foods (≥2 uses) as ghost cards for one-tap adding
+- Dismiss button to permanently hide a food from Quick Add
+
 ## [1.8.0] - 2026-03-25
 
 ### Added

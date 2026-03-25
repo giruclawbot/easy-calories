@@ -172,5 +172,11 @@
   "chart": {
     "calories": "Calorías",
     "goalLine": "Meta: {goal} kcal/día · Rojo = sobre la meta"
+  },
+  "quickAdd": {
+    "title": "⚡ Accesos rápidos",
+    "add": "+ Agregar",
+    "dismiss": "Ocultar",
+    "added": "✓"
   }
 }

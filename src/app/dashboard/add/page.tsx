@@ -5,8 +5,9 @@ import { format } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
 import { FoodSearch } from '@/components/FoodSearch'
 import { BarcodeScanner } from '@/components/BarcodeScanner'
-import { addMeal } from '@/lib/firestore'
+import { addMeal, trackFoodUsage } from '@/lib/firestore'
 import type { Meal } from '@/lib/firestore'
+import { QuickAdd } from '@/components/QuickAdd'
 import { FoodItem, NutritionFacts } from '@/lib/usda'
 import { useI18n } from '@/components/I18nProvider'
 
@@ -48,6 +49,8 @@ export default function AddFoodPage() {
       mealType: selectedMealType,
     }
     await addMeal(user.uid, today, newMeal)
+    // fire-and-forget usage tracking
+    trackFoodUsage(user.uid, meal).catch(() => {})
     setLastAdded(meal.foodName)
     setAdding(false)
   }
@@ -91,6 +94,9 @@ export default function AddFoodPage() {
           ))}
         </div>
       </div>
+
+      {/* Quick Add section */}
+      {user && <QuickAdd uid={user.uid} onAdd={handleAdd} mealType={selectedMealType} />}
 
       <button
         onClick={() => setShowScanner(!showScanner)}
