@@ -11,6 +11,7 @@ export interface Meal {
   quantity: number
   unit: string
   timestamp: string
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'  // optional, backward compat
   nutrition?: NutritionFacts  // nuevo, nullable para meals viejos
 }
 

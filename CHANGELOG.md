@@ -31,6 +31,21 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.8.0] - 2026-03-25
+
+### Added
+- Meal type grouping: meals can now be tagged as `breakfast`, `lunch`, `dinner`, or `snack`
+- Smart default meal type on Add Food page based on current time (5-10:59→breakfast, 11-14:59→lunch, 15-20:59→dinner, 21-4:59→snack)
+- Visual meal type selector (4 buttons with emoji) above food search on Add page
+- `MealList` grouped view: meals organized by type with emoji headers and calorie subtotals per group
+- Toggle between "All" and "By meal" view modes in MealList
+- Dashboard persists meal view preference in `localStorage` key `ec_meal_view`
+- Backward compat: legacy meals without `mealType` fall into "Others" group; all-legacy data forces flat view
+- i18n keys: `meals.*` (breakfast, lunch, dinner, snack, others, viewAll, viewGrouped, mealType, subtotal, noMeals) + `food.selectMealType`
+- `mealType` field added to `Meal` interface (optional for full backward compat)
+
+---
+
 ## [1.7.0] - 2026-03-25
 
 ### Added
