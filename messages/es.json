@@ -80,9 +80,22 @@
     "active": "Activo (6-7 días/semana)",
     "veryActive": "Muy activo (2x/día)",
     "moderate_rate": "Moderado (0.5 kg/sem) — recomendado",
-    "estimatedGoal": "Alcanzarás {weight} kg en aproximadamente",
+    "estimatedGoal": "Alcanzarás {weight} en aproximadamente",
     "basedOnPace": "Basado en tu ritmo seleccionado · puede variar",
-    "lowGoalWarning": "⚠️ Meta muy baja — considera consultar un nutriólogo"
+    "lowGoalWarning": "⚠️ Meta muy baja — considera consultar un nutriólogo",
+    "unitAge": "años",
+    "unitKg": "kg",
+    "unitCm": "cm",
+    "unitFt": "ft",
+    "unitIn": "in",
+    "bmrDesc": "Metabolismo basal",
+    "tdeeDesc": "Gasto total",
+    "recommendedDesc": "Recomendada",
+    "formula": "Basado en Mifflin-St Jeor · Ajustado por actividad y objetivo",
+    "recalculate": "← Recalcular",
+    "weightLbs": "Peso actual (lbs)",
+    "heightFt": "Altura (ft)",
+    "targetWeightLbs": "Peso objetivo (lbs)"
   },
   "profile": {
     "title": "Mi Perfil",
@@ -104,7 +117,13 @@
     "weeklyPace": "Ritmo",
     "timeline": "Tiempo estimado",
     "editGoal": "Editar meta",
-    "back": "← Volver"
+    "back": "← Volver",
+    "goalType": "Tipo",
+    "unitSystem": "Sistema de unidades",
+    "metric": "Métrico",
+    "imperial": "Imperial",
+    "weightLbs": "Peso (lbs)",
+    "heightImperial": "Altura (ft/in)"
   },
   "food": {
     "search": "Buscar alimento...",
@@ -127,7 +146,9 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "close": "Cerrar",
-    "back": "Volver"
+    "back": "Volver",
+    "today": "Hoy",
+    "required": "Requerido"
   },
   "login": {
     "title": "Easy Calories",

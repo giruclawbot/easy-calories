@@ -31,6 +31,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.0] - 2026-03-25
+
+### Added
+- Imperial/metric unit system toggle (`unitSystem: 'metric' | 'imperial'`) in `UserProfile` (Firestore)
+- `src/lib/units.ts`: `kgToLbs`, `lbsToKg`, `cmToFtIn`, `ftInToCm`, `formatWeight`, `formatHeight` helpers
+- Profile page: unit system selector (Metric / Imperial) — weight and height auto-convert on toggle; stored always as kg/cm in Firestore
+- CalorieCalculator: imperial mode shows weight in lbs, height as ft + in fields; internal calculations still use kg/cm via Mifflin-St Jeor
+- Dashboard: target weight displayed using `formatWeight()` respecting user's unit system
+- i18n: new keys — `calculator.unitAge/unitKg/unitCm/unitFt/unitIn/bmrDesc/tdeeDesc/recommendedDesc/formula/recalculate/weightLbs/heightFt/targetWeightLbs`
+- i18n: new keys — `profile.goalType/unitSystem/metric/imperial/weightLbs/heightImperial`
+- i18n: new keys — `common.today/required`
+- Unit tests for all `units.ts` conversion functions (`src/lib/__tests__/units.test.ts`)
+
+### Fixed
+- CalorieCalculator: hardcoded strings replaced with i18n keys (`años`, `Metabolismo basal`, `Gasto total`, `Recomendada`, `Basado en Mifflin-St Jeor...`, `← Recalcular`, `Requerido`)
+- Profile page: `Tipo` label now uses `t('profile.goalType')`; loading state uses `t('common.loading')`; PACE_LABELS/GOAL_TYPE_LABELS replaced with `t()` calls
+- DayPicker: hardcoded "Hoy" / "Ir a hoy" replaced with `t('common.today')`
+- CalorieCalculator `estimatedGoal` interpolation now shows correct unit in result (`{weight}` without hardcoded kg suffix)
+
+---
+
 ## [1.6.0] - 2026-03-25
 
 ### Added
