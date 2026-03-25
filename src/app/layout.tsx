@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   },
   description: 'Track your daily calories as easy as possible. Search from 900,000+ foods, scan barcodes, and see your weekly progress. Free and works offline.',
   keywords: ['calorie tracker', 'calorie counter', 'food diary', 'nutrition tracker', 'macros', 'diet app', 'contador calorías', 'dieta', 'nutrición'],
-  authors: [{ name: 'Giru', url: 'https://github.com/giruclawbot' }],
-  creator: 'Giru',
+  authors: [{ name: 'Jesus Enrique Dick Bustamante', url: 'https://ezcals.dev' }],
+  creator: 'Jesus Enrique Dick Bustamante',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               applicationCategory: 'HealthApplication',
               operatingSystem: 'Any',
               offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-              author: { '@type': 'Person', name: 'Giru' },
+              author: { '@type': 'Person', name: 'Jesus Enrique Dick Bustamante' },
             }),
           }}
         />
