@@ -31,6 +31,29 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.6.0] - 2026-03-25
+
+### Added
+- Dashboard: goal type badge showing current objective (📉 Losing weight / ⚖️ Maintaining / 📈 Gaining weight), color-coded and translated ES/EN
+- i18n: `dashboard.goalTypeLose`, `dashboard.goalTypeMaintain`, `dashboard.goalTypeGain` keys (ES + EN)
+- i18n: `dashboard.caloriesThisWeek`, `chart.calories`, `chart.goalLine` keys for CalorieChart (ES + EN)
+- i18n: `profile.back` key so Back button translates correctly in EN
+
+### Fixed
+- CalorieChart "Calorías esta semana" title was hardcoded in Spanish — now uses `useI18n()` with `date-fns` locale switching (day labels follow app language)
+- Profile page "← Volver" button was hardcoded in Spanish — now uses `t('profile.back')`
+- `favicon.ico` was showing Next.js default logo — replaced with app icon
+- `package-lock.json` out of sync caused `npm ci` failures in CI — synced and added missing `@swc/helpers@0.5.19`
+- Jest global mock for `useI18n` now uses real `es.json` translations — fixes 12 failing tests in v1.5.1
+- `CalorieCalculator.test.tsx` goal label text updated to match full translations (`Perder peso`, `Ganar peso`)
+- `I18nProvider.test.tsx` uses `jest.unmock` to bypass global mock for its own unit tests
+
+### Changed
+- Dashboard layout: "Your Goal" and "Macro Summary" sections moved below the meals list and weekly chart
+- Firebase Hosting: `Cache-Control` headers added — HTML/JSON serve `no-cache`, JS/CSS serve `immutable` with content hash, `sw.js` serves `no-cache` for PWA freshness
+
+---
+
 ## [1.5.0] - 2026-03-24
 
 ### Added
