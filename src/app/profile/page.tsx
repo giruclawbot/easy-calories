@@ -6,18 +6,10 @@ import { getUserProfile, saveUserProfile, UserProfile, GoalDetails } from '@/lib
 import { useI18n } from '@/components/I18nProvider'
 import { locales } from '@/lib/i18n'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
+import type { UnitSystem } from '@/lib/units'
+import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm, formatWeight } from '@/lib/units'
 
 const LOCALE_LABELS: Record<string, string> = { es: 'Español', en: 'English' }
-
-const PACE_LABELS: Record<string, Record<string, string>> = {
-  es: { slow: 'Lento', moderate: 'Moderado', fast: 'Rápido' },
-  en: { slow: 'Slow', moderate: 'Moderate', fast: 'Fast' },
-}
-
-const GOAL_TYPE_LABELS: Record<string, Record<string, string>> = {
-  es: { lose: 'Perder peso', maintain: 'Mantener', gain: 'Ganar peso' },
-  en: { lose: 'Lose weight', maintain: 'Maintain', gain: 'Gain weight' },
-}
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -29,13 +21,67 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [showCalculator, setShowCalculator] = useState(false)
 
+  // Display states for imperial
+  const [displayWeightLbs, setDisplayWeightLbs] = useState<number | ''>('')
+  const [displayHeightFt, setDisplayHeightFt] = useState<number | ''>('')
+  const [displayHeightIn, setDisplayHeightIn] = useState<number | ''>('')
+  const [displayTargetLbs, setDisplayTargetLbs] = useState<number | ''>('')
+
+  const unitSystem: UnitSystem = profile.unitSystem ?? 'metric'
+  const isImperial = unitSystem === 'imperial'
+
   useEffect(() => {
     if (!user) { router.push('/login'); return }
     getUserProfile(user.uid).then(p => {
-      if (p) setProfile(p)
+      if (p) {
+        setProfile(p)
+        syncDisplayValues(p, p.unitSystem ?? 'metric')
+      }
       setLoading(false)
     })
   }, [user, router])
+
+  function syncDisplayValues(p: UserProfile, system: UnitSystem) {
+    if (system === 'imperial') {
+      if (p.weightKg) setDisplayWeightLbs(kgToLbs(p.weightKg))
+      if (p.heightCm) {
+        const { ft, inches } = cmToFtIn(p.heightCm)
+        setDisplayHeightFt(ft)
+        setDisplayHeightIn(inches)
+      }
+      if (p.goalDetails?.targetWeightKg) setDisplayTargetLbs(kgToLbs(p.goalDetails.targetWeightKg))
+    }
+  }
+
+  function handleUnitSystemChange(system: UnitSystem) {
+    setProfile(p => ({ ...p, unitSystem: system }))
+    syncDisplayValues(profile, system)
+  }
+
+  function handleWeightChange(val: number | '') {
+    if (isImperial) {
+      setDisplayWeightLbs(val)
+      setProfile(p => ({ ...p, weightKg: val !== '' ? lbsToKg(val) : undefined }))
+    } else {
+      setProfile(p => ({ ...p, weightKg: val !== '' ? val : undefined }))
+    }
+  }
+
+  function handleHeightFtChange(ft: number | '') {
+    setDisplayHeightFt(ft)
+    const inches = typeof displayHeightIn === 'number' ? displayHeightIn : 0
+    if (ft !== '') {
+      setProfile(p => ({ ...p, heightCm: ftInToCm(ft, inches) }))
+    }
+  }
+
+  function handleHeightInChange(inches: number | '') {
+    setDisplayHeightIn(inches)
+    const ft = typeof displayHeightFt === 'number' ? displayHeightFt : 0
+    if (inches !== '') {
+      setProfile(p => ({ ...p, heightCm: ftInToCm(ft, inches) }))
+    }
+  }
 
   async function handleSave() {
     if (!user) return
@@ -53,15 +99,18 @@ export default function ProfilePage() {
       : { calorieGoal, goalType: 'maintain' }
     const updated = { ...profile, calorieGoal, goalDetails: mergedGoalDetails }
     setProfile(updated)
+    if (isImperial && mergedGoalDetails.targetWeightKg) {
+      setDisplayTargetLbs(kgToLbs(mergedGoalDetails.targetWeightKg))
+    }
     await saveUserProfile(user.uid, updated)
     setShowCalculator(false)
   }
 
-  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">Cargando...</div>
+  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">{t('common.loading')}</div>
 
   const gd = profile.goalDetails
-  const paceLabel = gd?.ratePerWeek ? (PACE_LABELS[locale]?.[gd.ratePerWeek] ?? gd.ratePerWeek) : null
-  const goalTypeLabel = gd?.goalType ? (GOAL_TYPE_LABELS[locale]?.[gd.goalType] ?? gd.goalType) : null
+  const goalTypeLabel = gd?.goalType ? t(`calculator.${gd.goalType}`) : null
+  const paceLabel = gd?.ratePerWeek ? t(`calculator.${gd.ratePerWeek === 'moderate' ? 'moderate_rate' : gd.ratePerWeek}`) : null
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -91,25 +140,82 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Age / Weight / Height */}
-          {([
-            { key: 'age', label: t('profile.age'), unit: '' },
-            { key: 'weightKg', label: t('profile.weight'), unit: 'kg' },
-            { key: 'heightCm', label: t('profile.height'), unit: 'cm' },
-          ] as const).map(({ key, label, unit }) => (
-            <div key={key}>
-              <label className="text-sm text-gray-400 block mb-1.5">{label}</label>
+          {/* Age */}
+          <div>
+            <label className="text-sm text-gray-400 block mb-1.5">{t('profile.age')}</label>
+            <input
+              type="number"
+              value={profile.age ?? ''}
+              onChange={e => setProfile(p => ({ ...p, age: e.target.value ? Number(e.target.value) : undefined }))}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          {/* Weight */}
+          <div>
+            <label className="text-sm text-gray-400 block mb-1.5">
+              {isImperial ? t('profile.weightLbs') : t('profile.weight')}
+            </label>
+            <div className="relative">
+              {isImperial ? (
+                <input
+                  type="number"
+                  value={displayWeightLbs}
+                  onChange={e => handleWeightChange(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-12"
+                />
+              ) : (
+                <input
+                  type="number"
+                  value={profile.weightKg ?? ''}
+                  onChange={e => handleWeightChange(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-12"
+                />
+              )}
+              <span className="absolute right-3 top-2.5 text-xs text-gray-500">{isImperial ? 'lbs' : 'kg'}</span>
+            </div>
+          </div>
+
+          {/* Height */}
+          <div>
+            <label className="text-sm text-gray-400 block mb-1.5">
+              {isImperial ? t('profile.heightImperial') : t('profile.height')}
+            </label>
+            {isImperial ? (
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    value={displayHeightFt}
+                    onChange={e => handleHeightFtChange(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="5"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                  />
+                  <span className="absolute right-2 top-2.5 text-xs text-gray-500">ft</span>
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    value={displayHeightIn}
+                    onChange={e => handleHeightInChange(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="7"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                  />
+                  <span className="absolute right-2 top-2.5 text-xs text-gray-500">in</span>
+                </div>
+              </div>
+            ) : (
               <div className="relative">
                 <input
                   type="number"
-                  value={(profile[key as keyof UserProfile] as number | undefined) ?? ''}
-                  onChange={e => setProfile(p => ({ ...p, [key]: e.target.value ? Number(e.target.value) : undefined }))}
+                  value={profile.heightCm ?? ''}
+                  onChange={e => setProfile(p => ({ ...p, heightCm: e.target.value ? Number(e.target.value) : undefined }))}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-12"
                 />
-                {unit && <span className="absolute right-3 top-2.5 text-xs text-gray-500">{unit}</span>}
+                <span className="absolute right-3 top-2.5 text-xs text-gray-500">cm</span>
               </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
 
         {/* Language */}
@@ -123,6 +229,22 @@ export default function ProfilePage() {
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${locale === l ? 'bg-emerald-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
               >
                 {LOCALE_LABELS[l]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Unit system */}
+        <div className="bg-gray-900 rounded-2xl p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('profile.unitSystem')}</h2>
+          <div className="flex gap-3">
+            {(['metric', 'imperial'] as const).map(sys => (
+              <button
+                key={sys}
+                onClick={() => handleUnitSystemChange(sys)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${unitSystem === sys ? 'bg-emerald-700 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+              >
+                {t(`profile.${sys}`)}
               </button>
             ))}
           </div>
@@ -145,14 +267,14 @@ export default function ProfilePage() {
               </div>
               {gd.goalType && (
                 <div className="bg-gray-800 rounded-xl p-3">
-                  <p className="text-xs text-gray-500">Tipo</p>
+                  <p className="text-xs text-gray-500">{t('profile.goalType')}</p>
                   <p className="text-sm font-semibold text-white">{goalTypeLabel}</p>
                 </div>
               )}
               {gd.targetWeightKg && (
                 <div className="bg-gray-800 rounded-xl p-3">
                   <p className="text-xs text-gray-500">{t('profile.targetWeight')}</p>
-                  <p className="text-lg font-bold text-white">{gd.targetWeightKg} kg</p>
+                  <p className="text-lg font-bold text-white">{formatWeight(gd.targetWeightKg, unitSystem)}</p>
                 </div>
               )}
               {paceLabel && (
@@ -213,6 +335,7 @@ export default function ProfilePage() {
             heightCm: profile.heightCm,
             age: profile.age,
             sex: profile.sex,
+            unitSystem: profile.unitSystem,
           }}
         />
       )}

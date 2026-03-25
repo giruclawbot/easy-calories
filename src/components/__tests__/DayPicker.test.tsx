@@ -14,8 +14,8 @@ describe('DayPicker', () => {
   it('shows formatted date when not today', () => {
     const onChange = jest.fn()
     render(<DayPicker selectedDate={yesterday} onChange={onChange} />)
-    // Shows "Ir a hoy" button when not today
-    expect(screen.getByText('Ir a hoy')).toBeInTheDocument()
+    // Shows "Hoy" button when not today
+    expect(screen.getByRole('button', { name: 'Hoy' })).toBeInTheDocument()
   })
 
   it('calls onChange when previous day clicked', () => {
@@ -37,10 +37,10 @@ describe('DayPicker', () => {
     expect(screen.getByLabelText('Día siguiente')).not.toBeDisabled()
   })
 
-  it('calls onChange when "Ir a hoy" clicked', () => {
+  it('calls onChange when "Hoy" clicked', () => {
     const onChange = jest.fn()
     render(<DayPicker selectedDate={yesterday} onChange={onChange} />)
-    fireEvent.click(screen.getByText('Ir a hoy'))
+    fireEvent.click(screen.getByRole('button', { name: 'Hoy' }))
     expect(onChange).toHaveBeenCalledWith(today)
   })
 })

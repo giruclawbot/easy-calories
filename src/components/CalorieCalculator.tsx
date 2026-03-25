@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { GoalDetails } from '@/lib/firestore'
 import { useI18n } from '@/components/I18nProvider'
+import type { UnitSystem } from '@/lib/units'
+import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm, formatWeight } from '@/lib/units'
 
 const schema = z.object({
   sex: z.enum(['male', 'female']),
@@ -44,11 +46,15 @@ interface Props {
     heightCm?: number
     age?: number
     sex?: 'male' | 'female'
+    unitSystem?: UnitSystem
   }
 }
 
 export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) {
   const { t } = useI18n()
+  const unitSystem: UnitSystem = initialValues?.unitSystem ?? 'metric'
+  const isImperial = unitSystem === 'imperial'
+
   const [result, setResult] = useState<{
     bmr: number
     tdee: number
@@ -59,19 +65,36 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
   } | null>(null)
   const [pendingGoalDetails, setPendingGoalDetails] = useState<GoalDetails | null>(null)
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  // Compute display defaults
+  const defaultWeightDisplay = initialValues?.weightKg
+    ? isImperial ? kgToLbs(initialValues.weightKg) : initialValues.weightKg
+    : undefined
+  const defaultHeightDisplay = initialValues?.heightCm
+    ? isImperial ? undefined : initialValues.heightCm
+    : undefined
+  const defaultHeightFt = initialValues?.heightCm ? cmToFtIn(initialValues.heightCm).ft : undefined
+  const defaultHeightIn = initialValues?.heightCm ? cmToFtIn(initialValues.heightCm).inches : undefined
+
+  const [heightFt, setHeightFt] = useState<number | ''>(defaultHeightFt ?? '')
+  const [heightIn, setHeightIn] = useState<number | ''>(defaultHeightIn ?? '')
+
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
       sex: initialValues?.sex ?? 'male',
       age: initialValues?.age,
-      weightKg: initialValues?.weightKg,
-      heightCm: initialValues?.heightCm,
+      weightKg: isImperial ? undefined : initialValues?.weightKg,
+      heightCm: isImperial ? undefined : initialValues?.heightCm,
       activity: 'moderate',
       goal: 'maintain',
       ratePerWeek: 'moderate',
     },
   })
+
+  // For imperial display, we keep a display weight state
+  const [displayWeightLbs, setDisplayWeightLbs] = useState<number | ''>(defaultWeightDisplay ?? '')
+  const [displayTargetLbs, setDisplayTargetLbs] = useState<number | ''>('')
 
   const goalValue = watch('goal')
 
@@ -87,6 +110,38 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
     slow: t('calculator.slow'),
     moderate: t('calculator.moderate_rate') || t('calculator.moderate'),
     fast: t('calculator.fast'),
+  }
+
+  function handleWeightLbsChange(lbs: number | '') {
+    setDisplayWeightLbs(lbs)
+    if (lbs !== '') {
+      setValue('weightKg', lbsToKg(lbs))
+    }
+  }
+
+  function handleHeightFtChange(ft: number | '') {
+    setHeightFt(ft)
+    const inches = typeof heightIn === 'number' ? heightIn : 0
+    if (ft !== '') {
+      setValue('heightCm', ftInToCm(ft, inches))
+    }
+  }
+
+  function handleHeightInChange(inches: number | '') {
+    setHeightIn(inches)
+    const ft = typeof heightFt === 'number' ? heightFt : 0
+    if (inches !== '') {
+      setValue('heightCm', ftInToCm(ft, inches))
+    }
+  }
+
+  function handleTargetLbsChange(lbs: number | '') {
+    setDisplayTargetLbs(lbs)
+    if (lbs !== '') {
+      setValue('targetWeightKg', lbsToKg(lbs))
+    } else {
+      setValue('targetWeightKg', undefined)
+    }
   }
 
   function calculate(data: FormData) {
@@ -150,6 +205,9 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
     onClose()
   }
 
+  const weightUnit = isImperial ? t('calculator.unitKg').replace('kg', 'lbs') || 'lbs' : t('calculator.unitKg')
+  const ageUnit = t('calculator.unitAge')
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="calc-title">
       <div className="bg-gray-900 rounded-2xl w-full max-w-md border border-gray-800 my-4">
@@ -174,31 +232,106 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { name: 'age', label: t('calculator.age'), placeholder: '30', suffix: 'años', id: 'calc-age' },
-                { name: 'weightKg', label: t('calculator.weight').split(' ')[0], placeholder: '70', suffix: 'kg', id: 'calc-weight' },
-                { name: 'heightCm', label: t('calculator.height').split(' ')[0], placeholder: '170', suffix: 'cm', id: 'calc-height' },
-              ].map(f => (
-                <div key={f.name}>
-                  <label htmlFor={f.id} className="text-xs text-gray-400 block mb-1">{f.label}</label>
-                  <div className="relative">
-                    <input
-                      id={f.id}
-                      {...register(f.name as keyof FormData)}
-                      type="number"
-                      placeholder={f.placeholder}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
-                      aria-describedby={errors[f.name as keyof FormData] ? `${f.id}-error` : undefined}
-                    />
-                    <span className="absolute right-2 top-2.5 text-xs text-gray-500">{f.suffix}</span>
-                  </div>
-                  {errors[f.name as keyof FormData] && (
-                    <p id={`${f.id}-error`} className="text-red-400 text-xs mt-0.5" role="alert">Requerido</p>
-                  )}
-                </div>
-              ))}
+            {/* Age */}
+            <div>
+              <label htmlFor="calc-age" className="text-xs text-gray-400 block mb-1">{t('calculator.age')}</label>
+              <div className="relative">
+                <input
+                  id="calc-age"
+                  {...register('age')}
+                  type="number"
+                  placeholder="30"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
+                  aria-describedby={errors.age ? 'calc-age-error' : undefined}
+                />
+                <span className="absolute right-2 top-2.5 text-xs text-gray-500">{ageUnit}</span>
+              </div>
+              {errors.age && <p id="calc-age-error" className="text-red-400 text-xs mt-0.5" role="alert">{t('common.required')}</p>}
             </div>
+
+            {/* Weight */}
+            {isImperial ? (
+              <div>
+                <label htmlFor="calc-weight" className="text-xs text-gray-400 block mb-1">{t('calculator.weightLbs')}</label>
+                <div className="relative">
+                  <input
+                    id="calc-weight"
+                    type="number"
+                    value={displayWeightLbs}
+                    onChange={e => handleWeightLbsChange(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="154"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
+                  />
+                  <span className="absolute right-2 top-2.5 text-xs text-gray-500">lbs</span>
+                </div>
+                {/* hidden field for form */}
+                <input type="hidden" {...register('weightKg')} />
+                {errors.weightKg && <p className="text-red-400 text-xs mt-0.5" role="alert">{t('common.required')}</p>}
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="calc-weight" className="text-xs text-gray-400 block mb-1">{t('calculator.weight').split(' ')[0]}</label>
+                <div className="relative">
+                  <input
+                    id="calc-weight"
+                    {...register('weightKg')}
+                    type="number"
+                    placeholder="70"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                    aria-describedby={errors.weightKg ? 'calc-weight-error' : undefined}
+                  />
+                  <span className="absolute right-2 top-2.5 text-xs text-gray-500">{t('calculator.unitKg')}</span>
+                </div>
+                {errors.weightKg && <p id="calc-weight-error" className="text-red-400 text-xs mt-0.5" role="alert">{t('common.required')}</p>}
+              </div>
+            )}
+
+            {/* Height */}
+            {isImperial ? (
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">{t('calculator.heightFt')}</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      value={heightFt}
+                      onChange={e => handleHeightFtChange(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="5"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                    />
+                    <span className="absolute right-2 top-2.5 text-xs text-gray-500">{t('calculator.unitFt')}</span>
+                  </div>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      value={heightIn}
+                      onChange={e => handleHeightInChange(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="7"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                    />
+                    <span className="absolute right-2 top-2.5 text-xs text-gray-500">{t('calculator.unitIn')}</span>
+                  </div>
+                </div>
+                <input type="hidden" {...register('heightCm')} />
+                {errors.heightCm && <p className="text-red-400 text-xs mt-0.5" role="alert">{t('common.required')}</p>}
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="calc-height" className="text-xs text-gray-400 block mb-1">{t('calculator.height').split(' ')[0]}</label>
+                <div className="relative">
+                  <input
+                    id="calc-height"
+                    {...register('heightCm')}
+                    type="number"
+                    placeholder="170"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-8"
+                    aria-describedby={errors.heightCm ? 'calc-height-error' : undefined}
+                  />
+                  <span className="absolute right-2 top-2.5 text-xs text-gray-500">{t('calculator.unitCm')}</span>
+                </div>
+                {errors.heightCm && <p id="calc-height-error" className="text-red-400 text-xs mt-0.5" role="alert">{t('common.required')}</p>}
+              </div>
+            )}
 
             <div>
               <label htmlFor="calc-activity" className="text-sm text-gray-400 block mb-1.5">{t('calculator.activity')}</label>
@@ -227,18 +360,33 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
               <>
                 <div>
                   <label htmlFor="calc-target" className="text-sm text-gray-400 block mb-1.5">
-                    {t('calculator.targetWeight')}
+                    {isImperial ? t('calculator.targetWeightLbs') : t('calculator.targetWeight')}
                   </label>
-                  <div className="relative">
-                    <input
-                      id="calc-target"
-                      {...register('targetWeightKg')}
-                      type="number"
-                      placeholder={goalValue === 'lose' ? 'ej: 65' : 'ej: 80'}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
-                    />
-                    <span className="absolute right-2 top-2.5 text-xs text-gray-500">kg</span>
-                  </div>
+                  {isImperial ? (
+                    <div className="relative">
+                      <input
+                        id="calc-target"
+                        type="number"
+                        value={displayTargetLbs}
+                        onChange={e => handleTargetLbsChange(e.target.value ? Number(e.target.value) : '')}
+                        placeholder={goalValue === 'lose' ? 'e.g. 143' : 'e.g. 176'}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
+                      />
+                      <span className="absolute right-2 top-2.5 text-xs text-gray-500">lbs</span>
+                      <input type="hidden" {...register('targetWeightKg')} />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        id="calc-target"
+                        {...register('targetWeightKg')}
+                        type="number"
+                        placeholder={goalValue === 'lose' ? 'ej: 65' : 'ej: 80'}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 pr-10"
+                      />
+                      <span className="absolute right-2 top-2.5 text-xs text-gray-500">{t('calculator.unitKg')}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -264,9 +412,9 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
           <div className="p-5 space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               {[
-                { label: t('calculator.bmr'), value: result.bmr, desc: 'Metabolismo basal', highlight: false },
-                { label: t('calculator.tdee'), value: result.tdee, desc: 'Gasto total', highlight: false },
-                { label: t('calculator.recommended'), value: result.recommended, desc: 'Recomendada', highlight: true },
+                { label: t('calculator.bmr'), value: result.bmr, desc: t('calculator.bmrDesc'), highlight: false },
+                { label: t('calculator.tdee'), value: result.tdee, desc: t('calculator.tdeeDesc'), highlight: false },
+                { label: t('calculator.recommended'), value: result.recommended, desc: t('calculator.recommendedDesc'), highlight: true },
               ].map(s => (
                 <div key={s.label} className={`rounded-xl p-3 border ${s.highlight ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-800 bg-gray-800'}`}>
                   <p className={`text-2xl font-bold ${s.highlight ? 'text-emerald-400' : 'text-white'}`}>{s.value}</p>
@@ -274,7 +422,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500 text-center">Basado en Mifflin-St Jeor · Ajustado por actividad y objetivo</p>
+            <p className="text-xs text-gray-500 text-center">{t('calculator.formula')}</p>
 
             {result.recommended < 1500 && (
               <p className="text-xs text-yellow-400 text-center">{t('calculator.lowGoalWarning')}</p>
@@ -283,7 +431,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
             {result.weeksToGoal && result.targetWeightKg && (
               <div className="bg-gray-800 rounded-xl p-3 text-center border border-gray-700">
                 <p className="text-white text-sm">
-                  🎯 {t('calculator.estimatedGoal', { weight: String(result.targetWeightKg) })}
+                  🎯 {t('calculator.estimatedGoal', { weight: formatWeight(result.targetWeightKg, unitSystem) })}
                 </p>
                 <p className="text-2xl font-bold text-white mt-1">
                   {result.weeksToGoal < 4
@@ -296,7 +444,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
 
             <div className="flex gap-2">
               <button onClick={() => setResult(null)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 rounded-xl text-sm transition-colors">
-                ← Recalcular
+                {t('calculator.recalculate')}
               </button>
               <button onClick={applyGoal} className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
                 {t('calculator.useGoal')}

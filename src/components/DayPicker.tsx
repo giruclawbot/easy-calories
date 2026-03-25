@@ -1,6 +1,7 @@
 'use client'
 import { format, addDays, subDays, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useI18n } from '@/components/I18nProvider'
 
 interface Props {
   selectedDate: string
@@ -8,8 +9,10 @@ interface Props {
 }
 
 export function DayPicker({ selectedDate, onChange }: Props) {
+  const { t, locale } = useI18n()
   const date = parseISO(selectedDate)
   const today = format(new Date(), 'yyyy-MM-dd')
+  const dateFnsLocale = locale === 'es' ? es : undefined
 
   return (
     <div className="flex items-center justify-between bg-gray-900 rounded-xl border border-gray-800 px-4 py-3">
@@ -22,14 +25,16 @@ export function DayPicker({ selectedDate, onChange }: Props) {
       </button>
       <div className="text-center">
         <p className="font-semibold text-white capitalize">
-          {selectedDate === today ? '📅 Hoy' : format(date, "EEEE d 'de' MMMM", { locale: es })}
+          {selectedDate === today
+            ? `📅 ${t('common.today')}`
+            : format(date, "EEEE d 'de' MMMM", { locale: dateFnsLocale })}
         </p>
         {selectedDate !== today && (
           <button
             onClick={() => onChange(today)}
             className="text-xs text-emerald-500 hover:text-emerald-300"
           >
-            Ir a hoy
+            {t('common.today')}
           </button>
         )}
       </div>

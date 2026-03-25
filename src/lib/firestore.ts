@@ -115,6 +115,7 @@ export interface UserProfile {
   age?: number
   sex?: 'male' | 'female'
   locale?: string
+  unitSystem?: 'metric' | 'imperial'
   // Goal details (replaces simple calorieGoal)
   goalDetails?: GoalDetails
   // Legacy (keep for backward compat)

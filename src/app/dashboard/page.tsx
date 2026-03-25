@@ -11,6 +11,8 @@ import { getCachedGoal, setCachedGoal, DEFAULT_GOAL } from '@/lib/goals'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
 import { EditMealModal } from '@/components/EditMealModal'
 import { useI18n } from '@/components/I18nProvider'
+import { formatWeight } from '@/lib/units'
+import type { UnitSystem } from '@/lib/units'
 
 function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
   const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
@@ -219,7 +221,7 @@ export default function DashboardPage() {
             </div>
             {userProfile.goalDetails.targetWeightKg && (
               <div>
-                <p className="text-lg font-bold text-white">{userProfile.goalDetails.targetWeightKg} kg</p>
+                <p className="text-lg font-bold text-white">{formatWeight(userProfile.goalDetails.targetWeightKg, (userProfile.unitSystem ?? 'metric') as UnitSystem)}</p>
                 <p className="text-xs text-gray-500">{t('dashboard.target')}</p>
               </div>
             )}
@@ -283,6 +285,7 @@ export default function DashboardPage() {
             heightCm: userProfile?.heightCm,
             age: userProfile?.age,
             sex: userProfile?.sex,
+            unitSystem: (userProfile?.unitSystem ?? 'metric') as UnitSystem,
           }}
         />
       )}
