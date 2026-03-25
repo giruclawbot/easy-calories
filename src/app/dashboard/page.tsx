@@ -118,9 +118,10 @@ export default function DashboardPage() {
         fat: acc.fat + meal.nutrition.fat,
         fiber: acc.fiber + meal.nutrition.fiber,
         sugar: acc.sugar + meal.nutrition.sugar,
+        sodium: acc.sodium + (meal.nutrition.sodium ?? 0),
       }
     },
-    { protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 }
+    { protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0 }
   )
 
   const macroTargets = getMacroTargets(userProfile, goal)
@@ -250,6 +251,7 @@ export default function DashboardPage() {
               { key: 'fat', label: t('macros.fat'), color: 'bg-orange-500', unit: 'g' },
               { key: 'fiber', label: t('macros.fiber'), color: 'bg-green-500', unit: 'g' },
               { key: 'sugar', label: t('macros.sugar'), color: 'bg-pink-500', unit: 'g' },
+              { key: 'sodium', label: t('macros.sodium'), color: 'bg-purple-500', unit: 'mg' },
             ] as const).map(({ key, label, color, unit }) => {
               const val = Math.round(totals[key])
               const target = macroTargets[key]
