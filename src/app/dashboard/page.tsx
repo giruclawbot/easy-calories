@@ -10,6 +10,7 @@ import { DayPicker } from '@/components/DayPicker'
 import { getCachedGoal, setCachedGoal, DEFAULT_GOAL } from '@/lib/goals'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
 import { EditMealModal } from '@/components/EditMealModal'
+import { useI18n } from '@/components/I18nProvider'
 
 function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
   const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
@@ -22,6 +23,7 @@ function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const today = format(new Date(), 'yyyy-MM-dd')
   const [selectedDate, setSelectedDate] = useState(today)
   const [dayData, setDayData] = useState<DayData | null>(null)
@@ -127,17 +129,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
           <p className="text-3xl font-bold text-emerald-400">{totalCalories}</p>
-          <p className="text-xs text-gray-400 mt-1">Consumidas</p>
+          <p className="text-xs text-gray-400 mt-1">{t('dashboard.consumed')}</p>
         </div>
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
           <p className="text-3xl font-bold text-white">{goal}</p>
-          <p className="text-xs text-gray-400 mt-1">Meta</p>
+          <p className="text-xs text-gray-400 mt-1">{t('dashboard.goal')}</p>
         </div>
         <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
           <p className={`text-3xl font-bold ${totalCalories > goal ? 'text-red-400' : 'text-blue-400'}`}>
             {totalCalories > goal ? `+${totalCalories - goal}` : remaining}
           </p>
-          <p className="text-xs text-gray-400 mt-1">{totalCalories > goal ? 'Exceso' : 'Restantes'}</p>
+          <p className="text-xs text-gray-400 mt-1">{totalCalories > goal ? t('dashboard.excess') : t('dashboard.remaining')}</p>
         </div>
       </div>
 
@@ -149,35 +151,35 @@ export default function DashboardPage() {
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <p className="text-right text-xs text-gray-500 mt-1">{percentage}% de la meta</p>
+        <p className="text-right text-xs text-gray-500 mt-1">{percentage}% {t('dashboard.ofGoal')}</p>
       </div>
 
       {/* Goal details card */}
       {userProfile?.goalDetails && (
         <div className="bg-gray-900 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-400">Tu meta</h3>
-            <button onClick={() => setShowCalculator(true)} className="text-xs text-emerald-400">Ajustar</button>
+            <h3 className="text-sm font-semibold text-gray-400">{t('dashboard.yourGoal')}</h3>
+            <button onClick={() => setShowCalculator(true)} className="text-xs text-emerald-400">{t('dashboard.adjustGoal')}</button>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <p className="text-lg font-bold text-emerald-400">{userProfile.goalDetails.calorieGoal}</p>
-              <p className="text-xs text-gray-500">kcal/día</p>
+              <p className="text-xs text-gray-500">{t('dashboard.kcalDay')}</p>
             </div>
             {userProfile.goalDetails.targetWeightKg && (
               <div>
                 <p className="text-lg font-bold text-white">{userProfile.goalDetails.targetWeightKg} kg</p>
-                <p className="text-xs text-gray-500">objetivo</p>
+                <p className="text-xs text-gray-500">{t('dashboard.target')}</p>
               </div>
             )}
             {userProfile.goalDetails.weeksToGoal && (
               <div>
                 <p className="text-lg font-bold text-white">
                   {userProfile.goalDetails.weeksToGoal < 4
-                    ? `~${userProfile.goalDetails.weeksToGoal}sem`
-                    : `~${Math.round(userProfile.goalDetails.weeksToGoal / 4.3)}m`}
+                    ? `~${userProfile.goalDetails.weeksToGoal}${t('dashboard.weeks').slice(0, 3)}`
+                    : `~${Math.round(userProfile.goalDetails.weeksToGoal / 4.3)}${t('dashboard.months').slice(0, 1)}`}
                 </p>
-                <p className="text-xs text-gray-500">estimado</p>
+                <p className="text-xs text-gray-500">{t('dashboard.estimated')}</p>
               </div>
             )}
           </div>
@@ -187,14 +189,14 @@ export default function DashboardPage() {
       {/* Daily macro totals with targets */}
       {meals.length > 0 && (
         <div className="bg-gray-900 rounded-2xl p-4">
-          <h3 className="text-sm font-semibold text-gray-400 mb-3">Resumen de macros</h3>
+          <h3 className="text-sm font-semibold text-gray-400 mb-3">{t('macros.summary')}</h3>
           <div className="space-y-2">
             {([
-              { key: 'protein', label: 'Proteína', color: 'bg-blue-500', unit: 'g' },
-              { key: 'carbs', label: 'Carbs', color: 'bg-yellow-500', unit: 'g' },
-              { key: 'fat', label: 'Grasa', color: 'bg-orange-500', unit: 'g' },
-              { key: 'fiber', label: 'Fibra', color: 'bg-green-500', unit: 'g' },
-              { key: 'sugar', label: 'Azúcar', color: 'bg-pink-500', unit: 'g' },
+              { key: 'protein', label: t('macros.protein'), color: 'bg-blue-500', unit: 'g' },
+              { key: 'carbs', label: t('macros.carbs'), color: 'bg-yellow-500', unit: 'g' },
+              { key: 'fat', label: t('macros.fat'), color: 'bg-orange-500', unit: 'g' },
+              { key: 'fiber', label: t('macros.fiber'), color: 'bg-green-500', unit: 'g' },
+              { key: 'sugar', label: t('macros.sugar'), color: 'bg-pink-500', unit: 'g' },
             ] as const).map(({ key, label, color, unit }) => {
               const val = Math.round(totals[key])
               const target = macroTargets[key]
@@ -217,13 +219,13 @@ export default function DashboardPage() {
 
       {/* Goal settings + Day picker */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">Mis calorías</h2>
+        <h2 className="text-lg font-bold text-white">{t('dashboard.myCalories')}</h2>
         <button
           onClick={() => setShowCalculator(true)}
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-emerald-400 transition-colors"
           aria-label="Configurar meta de calorías"
         >
-          ⚙️ Meta: {goal} kcal
+          ⚙️ {t('dashboard.setGoal')}: {goal} kcal
         </button>
       </div>
 
@@ -236,13 +238,13 @@ export default function DashboardPage() {
           href="/dashboard/add"
           className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors"
         >
-          + Agregar comida
+          {t('dashboard.addMeal')}
         </Link>
       )}
 
       {/* Meal list */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500 animate-pulse">Cargando...</div>
+        <div className="text-center py-8 text-gray-500 animate-pulse">{t('dashboard.loading')}</div>
       ) : (
         <MealList meals={meals} onRemove={selectedDate === today ? handleRemoveMeal : undefined} onEdit={selectedDate === today ? setEditingMeal : undefined} />
       )}
@@ -251,7 +253,9 @@ export default function DashboardPage() {
       <CalorieChart data={weekData} goal={goal} />
 
       {/* Footer */}
-      <p className="text-center text-xs text-gray-700 pt-2">Easy Calories v{process.env.NEXT_PUBLIC_APP_VERSION} · Giru 👾</p>
+      <p className="text-center text-xs text-gray-700 pt-2">
+        {t('dashboard.version', { version: process.env.NEXT_PUBLIC_APP_VERSION || '' })}
+      </p>
 
       {/* Calculator modal */}
       {showCalculator && (

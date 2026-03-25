@@ -3,7 +3,7 @@
     "dashboard": "Inicio",
     "addMeal": "Agregar comida",
     "profile": "Perfil",
-    "signOut": "Cerrar sesión"
+    "signOut": "Salir"
   },
   "dashboard": {
     "todayCalories": "Calorías hoy",
@@ -19,7 +19,21 @@
     "weeklyPace": "Ritmo semanal",
     "estimatedTime": "Tiempo estimado",
     "weeks": "semanas",
-    "months": "meses"
+    "months": "meses",
+    "consumed": "Consumidas",
+    "remaining": "Restantes",
+    "excess": "Exceso",
+    "ofGoal": "de la meta",
+    "yourGoal": "Tu meta",
+    "adjustGoal": "Ajustar",
+    "kcalDay": "kcal/día",
+    "target": "objetivo",
+    "estimated": "estimado",
+    "myCalories": "Mis calorías",
+    "setGoal": "Meta",
+    "addMeal": "+ Agregar comida",
+    "loading": "Cargando...",
+    "version": "Easy Calories v{version} · Giru 👾"
   },
   "macros": {
     "protein": "Proteína",
@@ -30,7 +44,8 @@
     "sodium": "Sodio",
     "cholesterol": "Colesterol",
     "recommended": "Recomendado",
-    "ofGoal": "de tu meta"
+    "ofGoal": "de tu meta",
+    "summary": "Resumen de macros"
   },
   "calculator": {
     "title": "🧮 Calculadora de calorías",
@@ -53,8 +68,13 @@
     "maintain": "Mantener",
     "gain": "Ganar peso",
     "slow": "Lento (0.25 kg/sem) — más músculo",
-    "moderate": "Moderado (0.5 kg/sem) — recomendado",
+    "moderate": "Moderado (3-5 días/semana)",
     "fast": "Rápido (0.75 kg/sem) — más disciplina",
+    "sedentary": "Sedentario (sin ejercicio)",
+    "light": "Ligero (1-3 días/semana)",
+    "active": "Activo (6-7 días/semana)",
+    "veryActive": "Muy activo (2x/día)",
+    "moderate_rate": "Moderado (0.5 kg/sem) — recomendado",
     "estimatedGoal": "Alcanzarás {weight} kg en aproximadamente",
     "basedOnPace": "Basado en tu ritmo seleccionado · puede variar",
     "lowGoalWarning": "⚠️ Meta muy baja — considera consultar un nutriólogo"
@@ -87,7 +107,11 @@
     "quantity": "Cantidad",
     "unit": "Unidad",
     "calories": "calorías",
-    "per100g": "por 100g"
+    "per100g": "por 100g",
+    "addTitle": "Agregar comida",
+    "back": "‹ Volver",
+    "addedSuccess": "{name} agregado correctamente",
+    "stopScan": "Detener escaneo"
   },
   "common": {
     "loading": "Cargando...",
@@ -98,5 +122,11 @@
     "delete": "Eliminar",
     "close": "Cerrar",
     "back": "Volver"
+  },
+  "login": {
+    "title": "Easy Calories",
+    "subtitle": "Track as easy as possible",
+    "continueGoogle": "Continuar con Google",
+    "terms": "Al iniciar sesión aceptas los términos de uso"
   }
 }

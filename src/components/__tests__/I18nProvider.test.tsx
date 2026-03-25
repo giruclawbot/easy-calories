@@ -1,3 +1,6 @@
+// Use real implementation — not the global mock from jest.setup.ts
+jest.unmock('@/components/I18nProvider')
+
 import { render, screen, act } from '@testing-library/react'
 import { I18nProvider, useI18n } from '../I18nProvider'
 

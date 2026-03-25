@@ -7,9 +7,11 @@ import { FoodSearch } from '@/components/FoodSearch'
 import { BarcodeScanner } from '@/components/BarcodeScanner'
 import { addMeal } from '@/lib/firestore'
 import { FoodItem, NutritionFacts } from '@/lib/usda'
+import { useI18n } from '@/components/I18nProvider'
 
 export default function AddFoodPage() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const router = useRouter()
   const [showScanner, setShowScanner] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -37,22 +39,22 @@ export default function AddFoodPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-gray-400 hover:text-white">‹ Volver</button>
-        <h1 className="text-2xl font-bold text-white">Agregar comida</h1>
+        <button onClick={() => router.back()} className="text-gray-400 hover:text-white">{t('food.back')}</button>
+        <h1 className="text-2xl font-bold text-white">{t('food.addTitle')}</h1>
       </div>
 
       {lastAdded && (
         <div className="bg-emerald-900/30 border border-emerald-700 rounded-xl px-4 py-3 flex items-center gap-2">
           <span className="text-emerald-400">✓</span>
-          <span className="text-emerald-300 text-sm"><strong>{lastAdded}</strong> agregado correctamente</span>
+          <span className="text-emerald-300 text-sm">{t('food.addedSuccess', { name: lastAdded })}</span>
         </div>
       )}
 
       <button
-        onClick={() => setShowScanner(true)}
+        onClick={() => setShowScanner(!showScanner)}
         className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-3 rounded-xl transition-colors"
       >
-        📷 Escanear código de barras
+        📷 {showScanner ? t('food.stopScan') : t('food.scanBarcode')}
       </button>
 
       <div>
