@@ -136,7 +136,20 @@
     "addTitle": "Agregar comida",
     "back": "‹ Volver",
     "addedSuccess": "{name} agregado correctamente",
-    "stopScan": "Detener escaneo"
+    "stopScan": "Detener escaneo",
+    "selectMealType": "¿Cuándo es?"
+  },
+  "meals": {
+    "breakfast": "Desayuno",
+    "lunch": "Almuerzo",
+    "dinner": "Cena",
+    "snack": "Snack",
+    "others": "Otros",
+    "viewAll": "Todo",
+    "viewGrouped": "Por comida",
+    "mealType": "Tipo de comida",
+    "subtotal": "{calories} kcal",
+    "noMeals": "Sin comidas registradas"
   },
   "common": {
     "loading": "Cargando...",

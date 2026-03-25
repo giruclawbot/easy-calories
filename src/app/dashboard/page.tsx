@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [showCalculator, setShowCalculator] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
+  const [mealViewMode, setMealViewMode] = useState<'grouped' | 'all'>('grouped')
 
   const last7Days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd')),
@@ -43,6 +44,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setGoal(getCachedGoal())
+    // Load meal view mode from localStorage
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('ec_meal_view') : null
+    if (saved === 'all' || saved === 'grouped') setMealViewMode(saved)
     if (user) {
       getUserProfile(user.uid).then(profile => {
         if (profile) {
@@ -189,7 +193,16 @@ export default function DashboardPage() {
       {loading ? (
         <div className="text-center py-8 text-gray-500 animate-pulse">{t('dashboard.loading')}</div>
       ) : (
-        <MealList meals={meals} onRemove={selectedDate === today ? handleRemoveMeal : undefined} onEdit={selectedDate === today ? setEditingMeal : undefined} />
+        <MealList
+            meals={meals}
+            onRemove={selectedDate === today ? handleRemoveMeal : undefined}
+            onEdit={selectedDate === today ? setEditingMeal : undefined}
+            viewMode={mealViewMode}
+            onViewModeChange={(mode) => {
+              setMealViewMode(mode)
+              localStorage.setItem('ec_meal_view', mode)
+            }}
+          />
       )}
 
       {/* Weekly chart */}

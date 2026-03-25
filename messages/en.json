@@ -136,7 +136,20 @@
     "addTitle": "Add meal",
     "back": "‹ Back",
     "addedSuccess": "{name} added successfully",
-    "stopScan": "Stop scanning"
+    "stopScan": "Stop scanning",
+    "selectMealType": "When is this?"
+  },
+  "meals": {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "snack": "Snack",
+    "others": "Others",
+    "viewAll": "All",
+    "viewGrouped": "By meal",
+    "mealType": "Meal type",
+    "subtotal": "{calories} kcal",
+    "noMeals": "No meals logged"
   },
   "common": {
     "loading": "Loading...",

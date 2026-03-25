@@ -6,8 +6,26 @@ import { useAuth } from '@/components/AuthProvider'
 import { FoodSearch } from '@/components/FoodSearch'
 import { BarcodeScanner } from '@/components/BarcodeScanner'
 import { addMeal } from '@/lib/firestore'
+import type { Meal } from '@/lib/firestore'
 import { FoodItem, NutritionFacts } from '@/lib/usda'
 import { useI18n } from '@/components/I18nProvider'
+
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+function getDefaultMealType(): MealType {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 11) return 'breakfast'
+  if (hour >= 11 && hour < 15) return 'lunch'
+  if (hour >= 15 && hour < 21) return 'dinner'
+  return 'snack'
+}
+
+const MEAL_TYPES: { type: MealType; emoji: string; key: string }[] = [
+  { type: 'breakfast', emoji: '🌅', key: 'meals.breakfast' },
+  { type: 'lunch', emoji: '☀️', key: 'meals.lunch' },
+  { type: 'dinner', emoji: '🌙', key: 'meals.dinner' },
+  { type: 'snack', emoji: '🍎', key: 'meals.snack' },
+]
 
 export default function AddFoodPage() {
   const { user } = useAuth()
@@ -16,17 +34,20 @@ export default function AddFoodPage() {
   const [showScanner, setShowScanner] = useState(false)
   const [adding, setAdding] = useState(false)
   const [lastAdded, setLastAdded] = useState<string | null>(null)
+  const [selectedMealType, setSelectedMealType] = useState<MealType>(getDefaultMealType())
 
   const today = format(new Date(), 'yyyy-MM-dd')
 
   async function handleAdd(meal: { foodName: string; calories: number; quantity: number; unit: string; nutrition?: NutritionFacts }) {
     if (!user) return
     setAdding(true)
-    await addMeal(user.uid, today, {
+    const newMeal: Meal = {
       id: Date.now().toString(),
       ...meal,
       timestamp: new Date().toISOString(),
-    })
+      mealType: selectedMealType,
+    }
+    await addMeal(user.uid, today, newMeal)
     setLastAdded(meal.foodName)
     setAdding(false)
   }
@@ -49,6 +70,27 @@ export default function AddFoodPage() {
           <span className="text-emerald-300 text-sm">{t('food.addedSuccess', { name: lastAdded })}</span>
         </div>
       )}
+
+      {/* Meal type selector */}
+      <div>
+        <p className="text-sm text-gray-400 mb-2">{t('food.selectMealType')}</p>
+        <div className="grid grid-cols-4 gap-2">
+          {MEAL_TYPES.map(({ type, emoji, key }) => (
+            <button
+              key={type}
+              onClick={() => setSelectedMealType(type)}
+              className={`flex flex-col items-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                selectedMealType === type
+                  ? 'bg-emerald-700 border-emerald-500 text-white'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'
+              }`}
+            >
+              <span className="text-lg">{emoji}</span>
+              <span>{t(key)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <button
         onClick={() => setShowScanner(!showScanner)}
