@@ -195,3 +195,11 @@ Read `AGENTS.md` before making changes. Key rules:
 2. Firebase must be initialized lazily — never at module level
 3. No trailing slash, no API routes
 4. Tests must pass with ≥90% coverage before any deploy
+
+---
+
+## License
+
+MIT License © 2026 Jesus Enrique Dick Bustamante
+
+See [LICENSE](./LICENSE) for full details.
