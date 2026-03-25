@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { GoalDetails } from '@/lib/firestore'
+import { useI18n } from '@/components/I18nProvider'
 
 const schema = z.object({
   sex: z.enum(['male', 'female']),
@@ -21,26 +22,12 @@ const schema = z.object({
 
 type FormData = z.output<typeof schema>
 
-const ACTIVITY_LABELS: Record<string, string> = {
-  sedentary: 'Sedentario (sin ejercicio)',
-  light: 'Ligero (1-3 días/semana)',
-  moderate: 'Moderado (3-5 días/semana)',
-  active: 'Activo (6-7 días/semana)',
-  very_active: 'Muy activo (2x/día)',
-}
-
 const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   sedentary: 1.2,
   light: 1.375,
   moderate: 1.55,
   active: 1.725,
   very_active: 1.9,
-}
-
-const RATE_LABELS: Record<string, string> = {
-  slow: 'Lento (0.25 kg/sem) — más músculo',
-  moderate: 'Moderado (0.5 kg/sem) — recomendado',
-  fast: 'Rápido (0.75 kg/sem) — más disciplina',
 }
 
 const RATE_DEFICIT: Record<string, number> = {
@@ -61,6 +48,7 @@ interface Props {
 }
 
 export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) {
+  const { t } = useI18n()
   const [result, setResult] = useState<{
     bmr: number
     tdee: number
@@ -86,6 +74,20 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
   })
 
   const goalValue = watch('goal')
+
+  const ACTIVITY_LABELS: Record<string, string> = {
+    sedentary: t('calculator.sedentary') || 'Sedentario (sin ejercicio)',
+    light: t('calculator.light') || 'Ligero (1-3 días/semana)',
+    moderate: t('calculator.moderate') || 'Moderado (3-5 días/semana)',
+    active: t('calculator.active') || 'Activo (6-7 días/semana)',
+    very_active: t('calculator.veryActive') || 'Muy activo (2x/día)',
+  }
+
+  const RATE_LABELS: Record<string, string> = {
+    slow: t('calculator.slow'),
+    moderate: t('calculator.moderate_rate') || t('calculator.moderate'),
+    fast: t('calculator.fast'),
+  }
 
   function calculate(data: FormData) {
     let bmr: number
@@ -152,20 +154,20 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="calc-title">
       <div className="bg-gray-900 rounded-2xl w-full max-w-md border border-gray-800 my-4">
         <div className="flex items-center justify-between p-5 border-b border-gray-800">
-          <h2 id="calc-title" className="font-bold text-white text-lg">🧮 Calculadora de calorías</h2>
+          <h2 id="calc-title" className="font-bold text-white text-lg">{t('calculator.title')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-xl" aria-label="Cerrar calculadora">×</button>
         </div>
 
         {!result ? (
           <form onSubmit={handleSubmit(calculate)} className="p-5 space-y-4">
             <div>
-              <label className="text-sm text-gray-400 block mb-1.5" htmlFor="calc-sex">Sexo biológico</label>
+              <label className="text-sm text-gray-400 block mb-1.5" htmlFor="calc-sex">{t('calculator.sex')}</label>
               <div className="flex gap-2">
                 {(['male', 'female'] as const).map(s => (
                   <label key={s} className="flex-1 cursor-pointer">
                     <input type="radio" {...register('sex')} value={s} className="sr-only peer" />
                     <div className="text-center py-2 rounded-lg border border-gray-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/30 text-sm text-gray-300 peer-checked:text-emerald-300 transition-colors">
-                      {s === 'male' ? '♂ Hombre' : '♀ Mujer'}
+                      {s === 'male' ? `♂ ${t('calculator.male')}` : `♀ ${t('calculator.female')}`}
                     </div>
                   </label>
                 ))}
@@ -174,9 +176,9 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                { name: 'age', label: 'Edad', placeholder: '30', suffix: 'años', id: 'calc-age' },
-                { name: 'weightKg', label: 'Peso', placeholder: '70', suffix: 'kg', id: 'calc-weight' },
-                { name: 'heightCm', label: 'Altura', placeholder: '170', suffix: 'cm', id: 'calc-height' },
+                { name: 'age', label: t('calculator.age'), placeholder: '30', suffix: 'años', id: 'calc-age' },
+                { name: 'weightKg', label: t('calculator.weight').split(' ')[0], placeholder: '70', suffix: 'kg', id: 'calc-weight' },
+                { name: 'heightCm', label: t('calculator.height').split(' ')[0], placeholder: '170', suffix: 'cm', id: 'calc-height' },
               ].map(f => (
                 <div key={f.name}>
                   <label htmlFor={f.id} className="text-xs text-gray-400 block mb-1">{f.label}</label>
@@ -199,7 +201,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
             </div>
 
             <div>
-              <label htmlFor="calc-activity" className="text-sm text-gray-400 block mb-1.5">Nivel de actividad</label>
+              <label htmlFor="calc-activity" className="text-sm text-gray-400 block mb-1.5">{t('calculator.activity')}</label>
               <select id="calc-activity" {...register('activity')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500">
                 {Object.entries(ACTIVITY_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
@@ -208,9 +210,9 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
             </div>
 
             <div>
-              <label className="text-sm text-gray-400 block mb-1.5">Objetivo</label>
+              <label className="text-sm text-gray-400 block mb-1.5">{t('calculator.goal')}</label>
               <div className="grid grid-cols-3 gap-2">
-                {([['lose', '📉 Perder'], ['maintain', '⚖️ Mantener'], ['gain', '📈 Ganar']] as const).map(([v, l]) => (
+                {([['lose', `📉 ${t('calculator.lose')}`], ['maintain', `⚖️ ${t('calculator.maintain')}`], ['gain', `📈 ${t('calculator.gain')}`]] as const).map(([v, l]) => (
                   <label key={v} className="cursor-pointer">
                     <input type="radio" {...register('goal')} value={v} className="sr-only peer" />
                     <div className="text-center py-2 rounded-lg border border-gray-700 peer-checked:border-emerald-500 peer-checked:bg-emerald-900/30 text-xs text-gray-300 peer-checked:text-emerald-300 transition-colors">
@@ -225,7 +227,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
               <>
                 <div>
                   <label htmlFor="calc-target" className="text-sm text-gray-400 block mb-1.5">
-                    Peso objetivo (kg)
+                    {t('calculator.targetWeight')}
                   </label>
                   <div className="relative">
                     <input
@@ -240,7 +242,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
                 </div>
 
                 <div>
-                  <label className="text-sm text-gray-400 block mb-1.5">Ritmo semanal</label>
+                  <label className="text-sm text-gray-400 block mb-1.5">{t('calculator.weeklyPace')}</label>
                   <div className="space-y-2">
                     {Object.entries(RATE_LABELS).map(([v, l]) => (
                       <label key={v} className="flex items-center gap-2 cursor-pointer">
@@ -255,16 +257,16 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
             )}
 
             <button type="submit" className="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors">
-              Calcular mi meta
+              {t('calculator.calculate')}
             </button>
           </form>
         ) : (
           <div className="p-5 space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               {[
-                { label: 'BMR', value: result.bmr, desc: 'Metabolismo basal', highlight: false },
-                { label: 'TDEE', value: result.tdee, desc: 'Gasto total', highlight: false },
-                { label: 'Meta', value: result.recommended, desc: 'Recomendada', highlight: true },
+                { label: t('calculator.bmr'), value: result.bmr, desc: 'Metabolismo basal', highlight: false },
+                { label: t('calculator.tdee'), value: result.tdee, desc: 'Gasto total', highlight: false },
+                { label: t('calculator.recommended'), value: result.recommended, desc: 'Recomendada', highlight: true },
               ].map(s => (
                 <div key={s.label} className={`rounded-xl p-3 border ${s.highlight ? 'border-emerald-600 bg-emerald-900/30' : 'border-gray-800 bg-gray-800'}`}>
                   <p className={`text-2xl font-bold ${s.highlight ? 'text-emerald-400' : 'text-white'}`}>{s.value}</p>
@@ -275,20 +277,20 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
             <p className="text-xs text-gray-500 text-center">Basado en Mifflin-St Jeor · Ajustado por actividad y objetivo</p>
 
             {result.recommended < 1500 && (
-              <p className="text-xs text-yellow-400 text-center">⚠️ Meta muy baja — considera consultar un nutriólogo</p>
+              <p className="text-xs text-yellow-400 text-center">{t('calculator.lowGoalWarning')}</p>
             )}
 
             {result.weeksToGoal && result.targetWeightKg && (
               <div className="bg-gray-800 rounded-xl p-3 text-center border border-gray-700">
                 <p className="text-white text-sm">
-                  🎯 Alcanzarás <span className="font-bold text-emerald-400">{result.targetWeightKg} kg</span> en aproximadamente
+                  🎯 {t('calculator.estimatedGoal', { weight: String(result.targetWeightKg) })}
                 </p>
                 <p className="text-2xl font-bold text-white mt-1">
                   {result.weeksToGoal < 4
-                    ? `${result.weeksToGoal} semanas`
-                    : `${Math.round(result.weeksToGoal / 4.3)} meses`}
+                    ? `${result.weeksToGoal} ${t('dashboard.weeks')}`
+                    : `${Math.round(result.weeksToGoal / 4.3)} ${t('dashboard.months')}`}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Basado en tu ritmo seleccionado · puede variar</p>
+                <p className="text-xs text-gray-500 mt-1">{t('calculator.basedOnPace')}</p>
               </div>
             )}
 
@@ -297,7 +299,7 @@ export function CalorieCalculator({ onGoalSet, onClose, initialValues }: Props) 
                 ← Recalcular
               </button>
               <button onClick={applyGoal} className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                Usar esta meta
+                {t('calculator.useGoal')}
               </button>
             </div>
           </div>

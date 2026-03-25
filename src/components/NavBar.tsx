@@ -4,9 +4,11 @@ import { getFirebaseAuth } from '@/lib/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useI18n } from '@/components/I18nProvider'
 
 export function NavBar({ user }: { user: User }) {
   const router = useRouter()
+  const { t } = useI18n()
 
   async function handleSignOut() {
     const firebaseAuth = getFirebaseAuth()
@@ -36,13 +38,13 @@ export function NavBar({ user }: { user: User }) {
             <span className="text-xs text-gray-600">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
           </div>
           <Link href="/profile" className="text-gray-400 hover:text-white transition-colors text-sm">
-            👤 Perfil
+            👤 {t('nav.profile')}
           </Link>
           <button
             onClick={handleSignOut}
             className="text-sm text-gray-400 hover:text-white transition-colors"
           >
-            Salir
+            {t('nav.signOut')}
           </button>
         </div>
       </div>

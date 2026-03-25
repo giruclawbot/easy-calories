@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { getFirebaseAuth } from '@/lib/firebase'
 import { useAuth } from '@/components/AuthProvider'
+import { useI18n } from '@/components/I18nProvider'
 
 export default function LoginPage() {
   const { user, loading } = useAuth()
+  const { t } = useI18n()
   const router = useRouter()
 
   useEffect(() => {
@@ -32,8 +34,8 @@ export default function LoginPage() {
         <div className="flex justify-center mb-4">
           <Image src="/logo.jpg" alt="Easy Calories" width={96} height={96} className="rounded-2xl shadow-lg" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">Easy Calories</h1>
-        <p className="text-gray-400 mb-2 text-sm">Track as easy as possible</p>
+        <h1 className="text-3xl font-bold text-white mb-2">{t('login.title')}</h1>
+        <p className="text-gray-400 mb-2 text-sm">{t('login.subtitle')}</p>
         <button
           onClick={loginWithGoogle}
           className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-semibold py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors"
@@ -44,9 +46,9 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Continuar con Google
+          {t('login.continueGoogle')}
         </button>
-        <p className="text-gray-600 text-xs mt-6">Al iniciar sesión aceptas los términos de uso</p>
+        <p className="text-gray-600 text-xs mt-6">{t('login.terms')}</p>
       </div>
     </div>
   )

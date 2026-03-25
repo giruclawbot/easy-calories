@@ -19,7 +19,21 @@
     "weeklyPace": "Weekly pace",
     "estimatedTime": "Estimated time",
     "weeks": "weeks",
-    "months": "months"
+    "months": "months",
+    "consumed": "Consumed",
+    "remaining": "Remaining",
+    "excess": "Excess",
+    "ofGoal": "of goal",
+    "yourGoal": "Your goal",
+    "adjustGoal": "Adjust",
+    "kcalDay": "kcal/day",
+    "target": "target",
+    "estimated": "estimated",
+    "myCalories": "My calories",
+    "setGoal": "Goal",
+    "addMeal": "+ Add meal",
+    "loading": "Loading...",
+    "version": "Easy Calories v{version} · Giru 👾"
   },
   "macros": {
     "protein": "Protein",
@@ -30,7 +44,8 @@
     "sodium": "Sodium",
     "cholesterol": "Cholesterol",
     "recommended": "Recommended",
-    "ofGoal": "of your goal"
+    "ofGoal": "of your goal",
+    "summary": "Macro summary"
   },
   "calculator": {
     "title": "🧮 Calorie Calculator",
@@ -53,8 +68,13 @@
     "maintain": "Maintain",
     "gain": "Gain weight",
     "slow": "Slow (0.25 kg/wk) — preserve muscle",
-    "moderate": "Moderate (0.5 kg/wk) — recommended",
+    "moderate": "Moderate (3-5 days/wk)",
     "fast": "Fast (0.75 kg/wk) — requires discipline",
+    "sedentary": "Sedentary (no exercise)",
+    "light": "Light (1-3 days/wk)",
+    "active": "Active (6-7 days/wk)",
+    "veryActive": "Very active (2x/day)",
+    "moderate_rate": "Moderate (0.5 kg/wk) — recommended",
     "estimatedGoal": "You'll reach {weight} kg in approximately",
     "basedOnPace": "Based on your selected pace · may vary",
     "lowGoalWarning": "⚠️ Very low goal — consider consulting a nutritionist"
@@ -87,7 +107,11 @@
     "quantity": "Quantity",
     "unit": "Unit",
     "calories": "calories",
-    "per100g": "per 100g"
+    "per100g": "per 100g",
+    "addTitle": "Add meal",
+    "back": "‹ Back",
+    "addedSuccess": "{name} added successfully",
+    "stopScan": "Stop scanning"
   },
   "common": {
     "loading": "Loading...",
@@ -98,5 +122,11 @@
     "delete": "Delete",
     "close": "Close",
     "back": "Back"
+  },
+  "login": {
+    "title": "Easy Calories",
+    "subtitle": "Track as easy as possible",
+    "continueGoogle": "Continue with Google",
+    "terms": "By signing in you accept the terms of use"
   }
 }
