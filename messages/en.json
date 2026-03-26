@@ -137,7 +137,9 @@
     "back": "‹ Back",
     "addedSuccess": "{name} added successfully",
     "stopScan": "Stop scanning",
-    "selectMealType": "When is this?"
+    "selectMealType": "When is this?",
+    "quickPortions": "Quick portions",
+    "customQty": "Custom amount"
   },
   "meals": {
     "breakfast": "Breakfast",
