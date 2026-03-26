@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { searchFoods, FoodItem, NutritionFacts } from '@/lib/usda'
+import { getPortionsForFood, PortionUnit } from '@/lib/portions'
+import { useI18n } from '@/components/I18nProvider'
 
 const schema = z.object({
   query: z.string().min(2, 'Escribe al menos 2 caracteres'),
@@ -21,7 +23,10 @@ export function FoodSearch({ onAdd }: Props) {
   const [results, setResults] = useState<FoodItem[]>([])
   const [selected, setSelected] = useState<FoodItem | null>(null)
   const [searching, setSearching] = useState(false)
+  const [activePortion, setActivePortion] = useState<PortionUnit | null>(null)
+  const [portions, setPortions] = useState<PortionUnit[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { locale, t } = useI18n()
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,6 +47,8 @@ export function FoodSearch({ onAdd }: Props) {
   function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
     register('query').onChange(e)
     setSelected(null)
+    setPortions([])
+    setActivePortion(null)
     const value = e.target.value
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (value.length < 2) {
@@ -58,6 +65,28 @@ export function FoodSearch({ onAdd }: Props) {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [])
+
+  function handleSelectFood(food: FoodItem) {
+    setSelected(food)
+    setResults([])
+    const detected = getPortionsForFood(food.description)
+    setPortions(detected)
+    setActivePortion(null)
+  }
+
+  function handlePortionClick(portion: PortionUnit) {
+    setActivePortion(portion)
+    setValue('quantity', portion.grams)
+    setValue('unit', 'g')
+  }
+
+  function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
+    register('quantity').onChange(e)
+    // Deselect active portion if quantity changed manually
+    if (activePortion && Number(e.target.value) !== activePortion.grams) {
+      setActivePortion(null)
+    }
+  }
 
   function onSubmit(data: FormData) {
     if (!selected) return
@@ -80,6 +109,8 @@ export function FoodSearch({ onAdd }: Props) {
     })
     setSelected(null)
     setResults([])
+    setPortions([])
+    setActivePortion(null)
     setValue('query', '')
   }
 
@@ -105,7 +136,7 @@ export function FoodSearch({ onAdd }: Props) {
               <li key={food.fdcId} role="option" aria-selected={false}>
                 <button
                   type="button"
-                  onClick={() => { setSelected(food); setResults([]) }}
+                  onClick={() => handleSelectFood(food)}
                   className="w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-0"
                 >
                   <p className="text-white text-sm font-medium truncate">{food.description}</p>
@@ -124,8 +155,37 @@ export function FoodSearch({ onAdd }: Props) {
               <p className="font-semibold text-white text-sm">{selected.description}</p>
               <p className="text-gray-400 text-xs">{selected.nutrition.calories} kcal/100g</p>
             </div>
-            <button type="button" onClick={() => setSelected(null)} className="text-gray-500 hover:text-white">×</button>
+            <button type="button" onClick={() => { setSelected(null); setPortions([]); setActivePortion(null) }} className="text-gray-500 hover:text-white">×</button>
           </div>
+
+          {/* Smart portion buttons */}
+          {portions.length > 0 && (
+            <div>
+              <p className="text-gray-400 text-xs mb-1.5">{t('food.quickPortions')}</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {portions.map((portion) => {
+                  const label = locale === 'en' ? portion.labelEn : portion.labelEs
+                  const isActive = activePortion?.labelEn === portion.labelEn && activePortion?.grams === portion.grams
+                  return (
+                    <button
+                      key={`${portion.labelEn}:${portion.grams}`}
+                      type="button"
+                      onClick={() => handlePortionClick(portion)}
+                      className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                        isActive
+                          ? 'bg-emerald-900 border-emerald-400 text-emerald-300'
+                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-emerald-600 hover:text-white'
+                      }`}
+                    >
+                      {portion.icon && <span>{portion.icon}</span>}
+                      <span>{label}</span>
+                      <span className="text-gray-400">· {portion.grams}g</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <div className="flex-1">
@@ -134,6 +194,7 @@ export function FoodSearch({ onAdd }: Props) {
                 type="number"
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
                 placeholder="Cantidad"
+                onChange={handleQuantityChange}
               />
             </div>
             <select

@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.11.0] - 2026-03-26
+
+### Added
+- Smart portion units for food search: detect food category from name and show quick portion buttons (e.g., "1 huevo grande · 50g")
+- `src/lib/portions.ts`: pure utility with `FOOD_CATEGORIES` database and `getPortionsForFood()` function
+- 12 food categories covered: eggs, bread/tortillas, specific fruits (apple, banana, orange, strawberry, avocado), generic fruits, dairy, cheese, meat/poultry, grains/pasta, legumes, nuts/seeds, oils/fats, beverages, vegetables
+- Bilingual labels (labelEs / labelEn) per portion unit, locale-aware display
+- i18n keys: `food.quickPortions`, `food.customQty` in es.json and en.json
+- 11 new unit tests in `src/lib/__tests__/portions.test.ts`
+
+---
+
 > 🤖 **FOR AI AGENTS — READ THIS BEFORE EVERY RELEASE:**
 >
 > Before bumping any version, you MUST:
