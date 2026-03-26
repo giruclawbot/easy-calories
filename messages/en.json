@@ -184,5 +184,16 @@
     "adjustQty": "Adjust quantity",
     "moveTo": "Move to",
     "save": "Save"
+  },
+  "export": {
+    "today": "Export today",
+    "history": "Export history",
+    "historyDesc": "Download all your logged data",
+    "csv": "CSV",
+    "markdown": "Markdown",
+    "pdf": "PDF",
+    "noData": "No data to export",
+    "loading": "Preparing...",
+    "downloading": "Downloading..."
   }
 }

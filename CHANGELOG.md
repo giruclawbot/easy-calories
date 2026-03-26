@@ -137,6 +137,17 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.10.0] - 2026-03-26
+
+### Added
+- Data export feature: export daily and historical meals as CSV, Markdown, or PDF
+- Dashboard export buttons for current day (CSV / MD / PDF)
+- Profile page "Export history" section to download all logged data
+- `getAllDaysData` Firestore helper to fetch all days for a user
+- i18n keys for export UI (en + es)
+
+---
+
 ## [Unreleased]
 
 _(Add new changes here during development)_

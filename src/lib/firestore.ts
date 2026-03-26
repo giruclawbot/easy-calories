@@ -212,3 +212,16 @@ export async function dismissFrequentFood(uid: string, foodName: string): Promis
   const ref = doc(db, 'users', uid, 'frequentFoods', slug)
   await setDoc(ref, { dismissed: true }, { merge: true })
 }
+
+export async function getAllDaysData(uid: string): Promise<Record<string, DayData>> {
+  const db = getFirebaseDb()
+  if (!db) return {}
+  const ref = collection(db, 'users', uid, 'days')
+  const snap = await getDocs(query(ref))
+  const result: Record<string, DayData> = {}
+  snap.docs.forEach(d => { result[d.id] = d.data() as DayData })
+  // Sort keys chronologically
+  const sorted: Record<string, DayData> = {}
+  Object.keys(result).sort().forEach(k => { sorted[k] = result[k] })
+  return sorted
+}

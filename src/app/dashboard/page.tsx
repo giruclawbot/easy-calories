@@ -13,6 +13,7 @@ import { EditMealModal } from '@/components/EditMealModal'
 import { useI18n } from '@/components/I18nProvider'
 import { formatWeight } from '@/lib/units'
 import type { UnitSystem } from '@/lib/units'
+import { exportDailyCSV, exportDailyMarkdown, exportDailyPDF } from '@/lib/export'
 
 function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
   const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
@@ -25,7 +26,7 @@ function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { t, syncLocaleFromProfile } = useI18n()
+  const { t, locale, syncLocaleFromProfile } = useI18n()
   const today = format(new Date(), 'yyyy-MM-dd')
   const [selectedDate, setSelectedDate] = useState(today)
   const [dayData, setDayData] = useState<DayData | null>(null)
@@ -36,6 +37,7 @@ export default function DashboardPage() {
   const [showCalculator, setShowCalculator] = useState(false)
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null)
   const [mealViewMode, setMealViewMode] = useState<'grouped' | 'all'>('grouped')
+  const [exportMsg, setExportMsg] = useState<string | null>(null)
 
   const last7Days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), 'yyyy-MM-dd')),
@@ -115,6 +117,18 @@ export default function DashboardPage() {
   const meals = dayData?.meals || []
   const percentage = Math.min(100, Math.round((totalCalories / goal) * 100))
   const remaining = Math.max(0, goal - totalCalories)
+
+  function handleExportDaily(format: 'csv' | 'markdown' | 'pdf') {
+    if (meals.length === 0) {
+      setExportMsg(t('export.noData'))
+      setTimeout(() => setExportMsg(null), 3000)
+      return
+    }
+    const data = { date: selectedDate, meals, totalCalories, profile: userProfile ?? undefined }
+    if (format === 'csv') exportDailyCSV(data, locale)
+    else if (format === 'markdown') exportDailyMarkdown(data, locale)
+    else exportDailyPDF(data, locale)
+  }
 
   const totals = meals.reduce(
     (acc, meal) => {
@@ -287,6 +301,23 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Export today */}
+      <div className="flex flex-col items-center gap-2 pt-2">
+        <p className="text-xs text-gray-500">{t('export.today')}</p>
+        <div className="flex gap-2">
+          <button onClick={() => handleExportDaily('csv')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            📄 {t('export.csv')}
+          </button>
+          <button onClick={() => handleExportDaily('markdown')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            📝 {t('export.markdown')}
+          </button>
+          <button onClick={() => handleExportDaily('pdf')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            🖨️ {t('export.pdf')}
+          </button>
+        </div>
+        {exportMsg && <p className="text-xs text-yellow-400">{exportMsg}</p>}
+      </div>
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-700 pt-2">
