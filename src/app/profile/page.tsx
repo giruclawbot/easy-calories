@@ -339,6 +339,53 @@ export default function ProfilePage() {
           )}
         </div>
 
+        {/* Hydration settings */}
+        <div className="bg-gray-900 rounded-2xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('hydration.settings')}</h2>
+
+          {/* Toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-300">{t('hydration.enable')}</span>
+            <button
+              role="switch"
+              aria-checked={profile.hydrationEnabled ?? false}
+              onClick={async () => {
+                if (!user) return
+                const next = !(profile.hydrationEnabled ?? false)
+                setProfile(p => ({ ...p, hydrationEnabled: next }))
+                await saveUserProfile(user.uid, { hydrationEnabled: next })
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                profile.hydrationEnabled ? 'bg-blue-600' : 'bg-gray-700'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                profile.hydrationEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          {/* Goal input — only shown when enabled */}
+          {profile.hydrationEnabled && (
+            <div>
+              <label className="text-sm text-gray-400 block mb-1.5">{t('hydration.goal')}</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={profile.hydrationGoalMl ?? 2000}
+                  onChange={e => setProfile(p => ({ ...p, hydrationGoalMl: e.target.value ? Number(e.target.value) : 2000 }))}
+                  min={500}
+                  max={5000}
+                  step={100}
+                  placeholder="2000"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 pr-10"
+                />
+                <span className="absolute right-3 top-2.5 text-xs text-gray-500">{t('hydration.goalUnit')}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Export history */}
         <div className="bg-gray-900 rounded-2xl p-5 space-y-3">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('export.history')}</h2>

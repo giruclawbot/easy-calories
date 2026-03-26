@@ -197,5 +197,22 @@
     "noData": "No data to export",
     "loading": "Preparing...",
     "downloading": "Downloading..."
+  },
+  "hydration": {
+    "title": "Hydration",
+    "settings": "Hydration",
+    "enable": "Enable hydration tracking",
+    "goal": "Daily goal",
+    "goalUnit": "ml",
+    "add": "Add",
+    "reset": "Reset",
+    "confirmReset": "Reset today's log?",
+    "yes": "Yes",
+    "no": "No",
+    "of": "of",
+    "customAmount": "Amount",
+    "progress": "{current} ml of {goal} ml",
+    "complete": "Goal reached! 💧",
+    "readOnly": "Read-only — select today to log"
   }
 }

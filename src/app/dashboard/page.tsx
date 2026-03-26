@@ -14,6 +14,7 @@ import { useI18n } from '@/components/I18nProvider'
 import { formatWeight } from '@/lib/units'
 import type { UnitSystem } from '@/lib/units'
 import { exportDailyCSV, exportDailyMarkdown, exportDailyPDF } from '@/lib/export'
+import { HydrationTracker } from '@/components/HydrationTracker'
 
 function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
   const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
@@ -323,6 +324,16 @@ export default function DashboardPage() {
       <p className="text-center text-xs text-gray-700 pt-2">
         {t('dashboard.version', { version: process.env.NEXT_PUBLIC_APP_VERSION || '' })}
       </p>
+
+      {/* Hydration — optional, shown at the bottom */}
+      {user && userProfile?.hydrationEnabled && (
+        <HydrationTracker
+          uid={user.uid}
+          date={selectedDate}
+          goalMl={userProfile.hydrationGoalMl ?? 2000}
+          isToday={selectedDate === today}
+        />
+      )}
 
       {/* Calculator modal */}
       {showCalculator && (
