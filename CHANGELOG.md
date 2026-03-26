@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.14.0] - 2026-03-26
+
+### Added
+- Optional hydration tracking feature (opt-in, disabled by default)
+  - New Firestore collection `users/{uid}/hydration/{date}` for daily water logs
+  - Profile page: toggle to enable/disable hydration tracking + daily goal input (ml)
+  - Dashboard: `HydrationTracker` widget shown at the bottom when enabled
+  - Quick add buttons: +150ml, +250ml, +350ml, +500ml
+  - Custom amount input with add button
+  - Progress bar showing totalMl / goalMl with percentage
+  - Reset today's log with inline confirmation
+  - Read-only view for past dates
+  - Full i18n support (es/en)
+
+---
+
 ## [1.12.0] - 2026-03-26
 
 ### Fixed

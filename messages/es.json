@@ -197,5 +197,22 @@
     "noData": "Sin datos para exportar",
     "loading": "Preparando...",
     "downloading": "Descargando..."
+  },
+  "hydration": {
+    "title": "Hidratación",
+    "settings": "Hidratación",
+    "enable": "Activar seguimiento de hidratación",
+    "goal": "Meta diaria",
+    "goalUnit": "ml",
+    "add": "Agregar",
+    "reset": "Reiniciar",
+    "confirmReset": "¿Reiniciar el registro de hoy?",
+    "yes": "Sí",
+    "no": "No",
+    "of": "de",
+    "customAmount": "Cantidad",
+    "progress": "{current} ml de {goal} ml",
+    "complete": "¡Meta alcanzada! 💧",
+    "readOnly": "Solo lectura — selecciona hoy para registrar"
   }
 }

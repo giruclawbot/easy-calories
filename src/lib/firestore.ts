@@ -122,6 +122,9 @@ export interface UserProfile {
   goalDetails?: GoalDetails
   // Legacy (keep for backward compat)
   calorieGoal?: number
+  // Hydration tracking
+  hydrationEnabled?: boolean   // default false — user must opt-in
+  hydrationGoalMl?: number     // daily goal in ml, default 2000
   updatedAt?: unknown
 }
 
@@ -224,4 +227,49 @@ export async function getAllDaysData(uid: string): Promise<Record<string, DayDat
   const sorted: Record<string, DayData> = {}
   Object.keys(result).sort().forEach(k => { sorted[k] = result[k] })
   return sorted
+}
+
+export interface HydrationLog {
+  date: string
+  totalMl: number
+  logs: { ml: number; timestamp: string }[]
+  updatedAt?: unknown
+}
+
+export async function getHydrationLog(uid: string, date: string): Promise<HydrationLog | null> {
+  const db = getFirebaseDb()
+  if (!db) return null
+  const ref = doc(db, 'users', uid, 'hydration', date)
+  const snap = await getDoc(ref)
+  return snap.exists() ? (snap.data() as HydrationLog) : null
+}
+
+export async function addHydration(uid: string, date: string, ml: number): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'hydration', date)
+  const snap = await getDoc(ref)
+  const timestamp = new Date().toISOString()
+  if (snap.exists()) {
+    const data = snap.data() as HydrationLog
+    await updateDoc(ref, {
+      totalMl: (data.totalMl || 0) + ml,
+      logs: arrayUnion({ ml, timestamp }),
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    await setDoc(ref, {
+      date,
+      totalMl: ml,
+      logs: [{ ml, timestamp }],
+      updatedAt: serverTimestamp(),
+    })
+  }
+}
+
+export async function resetHydration(uid: string, date: string): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'hydration', date)
+  await setDoc(ref, { date, totalMl: 0, logs: [], updatedAt: serverTimestamp() })
 }
