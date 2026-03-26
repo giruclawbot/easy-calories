@@ -6,6 +6,33 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.12.0] - 2026-03-26
+
+### Fixed
+- Barcode scanner: replaced broken USDA-text-search with Open Food Facts API cascade
+  - Open Food Facts (world.openfoodfacts.org) queried first — 3M+ products, no API key, best US coverage
+  - Falls back to USDA Branded Foods with strict `gtinUpc` match verification (prevents false positives)
+  - `extractNutritionFromOFF()` maps OFF nutriments_100g format, converts sodium g→mg
+  - BarcodeScanner shows "Buscando..." feedback while looking up product
+- PWA cache: service worker completely rewritten
+  - `scripts/inject-sw-version.mjs` injects unique cache name per build (pkg version + timestamp)
+  - HTML/JSON → network-first, `_next/static` → cache-first (immutable), everything else → stale-while-revalidate
+  - Old caches purged automatically on SW activate
+  - `build` script runs inject-sw-version post-build
+- EditMealModal: hardcoded Spanish strings replaced with `t()` calls
+- Profile page: loading state was hardcoded "Cargando..." — now uses `t('common.loading')`
+
+### Added
+- EditMealModal: meal type selector — move a logged food to a different meal (Breakfast/Lunch/Dinner/Snack)
+- i18n keys: `edit.title`, `edit.adjustQty`, `edit.moveTo`, `edit.save` in es.json + en.json
+- Custom domain `ezcals.dev` — all metadata, OG tags, JSON-LD schema, README updated
+- MIT License file (`LICENSE`) — © 2026 Jesus Enrique Dick Bustamante
+- Copyright notice in app footer and repository metadata
+- Sodium macro in dashboard macro summary (purple progress bar, 2300mg/day target)
+- Firestore sync fix: `syncLocaleFromProfile()` in `I18nProvider` — Firestore is now source of truth for locale across devices; fixes language/unitSystem lost on new browsers
+
+---
+
 ## [1.11.0] - 2026-03-26
 
 ### Added
@@ -40,6 +67,17 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 > ### Removed
 > - Short description of removals
 > ```
+
+---
+
+## [1.10.0] - 2026-03-26
+
+### Added
+- Data export feature: export daily and historical meals as CSV, Markdown, or PDF
+- Dashboard export buttons for current day (CSV / MD / PDF)
+- Profile page "Export history" section to download all logged data
+- `getAllDaysData` Firestore helper to fetch all days for a user
+- i18n keys for export UI (en + es)
 
 ---
 
@@ -146,17 +184,6 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ### Changed
 - Goals: localStorage is now a cache layer, Firestore is the source of truth
 - CalorieCalculator: deficit now uses rate-based approach (slow/moderate/fast)
-
----
-
-## [1.10.0] - 2026-03-26
-
-### Added
-- Data export feature: export daily and historical meals as CSV, Markdown, or PDF
-- Dashboard export buttons for current day (CSV / MD / PDF)
-- Profile page "Export history" section to download all logged data
-- `getAllDaysData` Firestore helper to fetch all days for a user
-- i18n keys for export UI (en + es)
 
 ---
 
