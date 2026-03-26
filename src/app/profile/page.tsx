@@ -342,6 +342,31 @@ export default function ProfilePage() {
           )}
         </div>
 
+        {/* Supplement settings */}
+        <div className="bg-gray-900 rounded-2xl p-5 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('supplements.settings')}</h2>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-300">{t('supplements.enable')}</span>
+            <button
+              role="switch"
+              aria-checked={profile.supplementsEnabled ?? false}
+              onClick={async () => {
+                if (!user) return
+                const next = !(profile.supplementsEnabled ?? false)
+                setProfile(p => ({ ...p, supplementsEnabled: next }))
+                await saveUserProfile(user.uid, { supplementsEnabled: next })
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                profile.supplementsEnabled ? 'bg-teal-600' : 'bg-gray-700'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                profile.supplementsEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+        </div>
+
         {/* Hydration settings */}
         <div className="bg-gray-900 rounded-2xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('hydration.settings')}</h2>

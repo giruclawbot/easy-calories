@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { format, subDays } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
-import { getDayData, removeMeal, updateMeal, getWeekData, getUserProfile, saveUserProfile, DayData, Meal, UserProfile, GoalDetails } from '@/lib/firestore'
+import { getDayData, removeMeal, updateMeal, getWeekData, getUserProfile, saveUserProfile, addMeal, DayData, Meal, UserProfile, GoalDetails, SupplementEntry } from '@/lib/firestore'
 import { MealList } from '@/components/MealList'
 import { CalorieChart } from '@/components/CalorieChart'
 import { DayPicker } from '@/components/DayPicker'
@@ -15,6 +15,7 @@ import { formatWeight } from '@/lib/units'
 import type { UnitSystem } from '@/lib/units'
 import { exportDailyCSV, exportDailyMarkdown, exportDailyPDF } from '@/lib/export'
 import { HydrationTracker } from '@/components/HydrationTracker'
+import { SupplementTracker } from '@/components/SupplementTracker'
 
 function getMacroTargets(profile: UserProfile | null, calorieGoal: number) {
   const protein = profile?.weightKg ? Math.round(profile.weightKg * 1.8) : Math.round(calorieGoal * 0.25 / 4)
@@ -98,6 +99,22 @@ export default function DashboardPage() {
     if (!user) return
     await updateMeal(user.uid, selectedDate, oldMeal, newMeal)
     setEditingMeal(null)
+    loadData()
+  }
+
+  async function handleCaloricSupplement(entry: SupplementEntry) {
+    if (!user || !entry.nutrition) return
+    const meal: Meal = {
+      id: entry.id,
+      foodName: entry.name,
+      calories: entry.calories,
+      quantity: entry.amount,
+      unit: entry.unit,
+      timestamp: entry.timestamp,
+      mealType: 'snack',
+      nutrition: entry.nutrition,
+    }
+    await addMeal(user.uid, selectedDate, meal)
     loadData()
   }
 
@@ -332,6 +349,16 @@ export default function DashboardPage() {
           date={selectedDate}
           goalMl={userProfile.hydrationGoalMl ?? 2000}
           isToday={selectedDate === today}
+        />
+      )}
+
+      {/* Supplements — optional */}
+      {user && userProfile?.supplementsEnabled && (
+        <SupplementTracker
+          uid={user.uid}
+          date={selectedDate}
+          isToday={selectedDate === today}
+          onCaloricSupplementAdded={handleCaloricSupplement}
         />
       )}
 

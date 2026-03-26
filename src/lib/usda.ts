@@ -137,3 +137,55 @@ export async function getFoodByBarcode(upc: string): Promise<FoodItem | null> {
 
   return null
 }
+
+export async function searchSupplements(query: string): Promise<FoodItem[]> {
+  const results: FoodItem[] = []
+  const seen = new Set<string>()
+
+  // 1. USDA search with dataType=Branded
+  try {
+    const res = await fetch(
+      `${BASE_URL}/foods/search?query=${encodeURIComponent(query)}&api_key=${API_KEY}&pageSize=8&dataType=Branded`
+    )
+    if (res.ok) {
+      const data = await res.json()
+      for (const food of (data.foods || [])) {
+        const key = (food.description as string).toLowerCase()
+        if (!seen.has(key)) {
+          seen.add(key)
+          results.push({
+            fdcId: food.fdcId,
+            description: food.description,
+            brandOwner: food.brandOwner || food.brandName,
+            nutrition: extractNutrition((food.foodNutrients as Array<{ nutrientName?: string; nutrientId?: number; value?: number }>) || []),
+          })
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 2. Open Food Facts supplement search
+  try {
+    const res = await fetch(
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&action=process&json=1&page_size=5&fields=product_name,brands,nutriments,serving_size`
+    )
+    if (res.ok) {
+      const data = await res.json()
+      for (const product of (data.products || [])) {
+        if (!product.product_name) continue
+        const key = (product.product_name as string).toLowerCase()
+        if (!seen.has(key)) {
+          seen.add(key)
+          results.push({
+            fdcId: 0,
+            description: product.product_name,
+            brandOwner: product.brands || undefined,
+            nutrition: extractNutritionFromOFF(product.nutriments || {}),
+          })
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  return results.slice(0, 8)
+}

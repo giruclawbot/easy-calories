@@ -218,5 +218,28 @@
     "calculatedGoal": "Meta recomendada para ti",
     "calcBasis": "Basado en peso, actividad y sexo (NAM/OMS)",
     "applyGoal": "Usar esta meta"
+  },
+  "supplements": {
+    "title": "Suplementos",
+    "settings": "Suplementos",
+    "enable": "Activar seguimiento de suplementos",
+    "search": "Buscar suplemento...",
+    "searchTab": "Buscar",
+    "logTab": "Registros",
+    "add": "Agregar",
+    "amount": "Cantidad",
+    "unit": "Unidad",
+    "notes": "Notas (opcional)",
+    "caloric": "⚡ Cuenta en tus calorías",
+    "nonCaloric": "💊 Solo seguimiento",
+    "addedToMeals": "✓ Agregado a tus comidas",
+    "logged": "✓ Registrado",
+    "noResults": "Sin resultados. Prueba otro término o agrega manualmente.",
+    "addManually": "Agregar manualmente",
+    "manualName": "Nombre del suplemento",
+    "manualCalories": "Calorías (opcional)",
+    "noEntries": "Sin suplementos registrados hoy",
+    "perServing": "por porción",
+    "brand": "Marca"
   }
 }

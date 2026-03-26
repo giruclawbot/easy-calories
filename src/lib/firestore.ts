@@ -125,6 +125,8 @@ export interface UserProfile {
   // Hydration tracking
   hydrationEnabled?: boolean   // default false — user must opt-in
   hydrationGoalMl?: number     // daily goal in ml, default 2000
+  // Supplement tracking
+  supplementsEnabled?: boolean  // default false, opt-in
   updatedAt?: unknown
 }
 
@@ -272,4 +274,62 @@ export async function resetHydration(uid: string, date: string): Promise<void> {
   if (!db) return
   const ref = doc(db, 'users', uid, 'hydration', date)
   await setDoc(ref, { date, totalMl: 0, logs: [], updatedAt: serverTimestamp() })
+}
+
+// ─── Supplement tracking ──────────────────────────────────────────────────────
+
+export interface SupplementEntry {
+  id: string
+  name: string
+  brand?: string
+  amount: number
+  unit: string  // 'g' | 'mg' | 'ml' | 'capsule' | 'tablet' | 'scoop'
+  calories: number
+  nutrition?: NutritionFacts
+  timestamp: string
+  notes?: string
+}
+
+export interface SupplementLog {
+  date: string
+  entries: SupplementEntry[]
+  updatedAt?: unknown
+}
+
+export async function getSupplementLog(uid: string, date: string): Promise<SupplementLog | null> {
+  const db = getFirebaseDb()
+  if (!db) return null
+  const ref = doc(db, 'users', uid, 'supplements', date)
+  const snap = await getDoc(ref)
+  return snap.exists() ? (snap.data() as SupplementLog) : null
+}
+
+export async function addSupplement(uid: string, date: string, entry: SupplementEntry): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'supplements', date)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    await updateDoc(ref, {
+      entries: arrayUnion(entry),
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    await setDoc(ref, {
+      date,
+      entries: [entry],
+      updatedAt: serverTimestamp(),
+    })
+  }
+}
+
+export async function removeSupplement(uid: string, date: string, entryId: string): Promise<void> {
+  const db = getFirebaseDb()
+  if (!db) return
+  const ref = doc(db, 'users', uid, 'supplements', date)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+  const data = snap.data() as SupplementLog
+  const entries = data.entries.filter((e: SupplementEntry) => e.id !== entryId)
+  await setDoc(ref, { ...data, entries, updatedAt: serverTimestamp() })
 }
