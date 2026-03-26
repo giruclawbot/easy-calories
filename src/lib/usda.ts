@@ -63,8 +63,45 @@ export async function searchFoods(query: string): Promise<FoodItem[]> {
   }
 }
 
-export async function getFoodByBarcode(upc: string): Promise<FoodItem | null> {
+// Open Food Facts API — free, no key, 3M+ products, best US coverage
+const OFF_BASE = 'https://world.openfoodfacts.org/api/v2/product'
+
+function extractNutritionFromOFF(nutriments: Record<string, number>): NutritionFacts {
+  const n = nutriments || {}
+  return {
+    calories:    Math.round((n['energy-kcal_100g'] ?? n['energy_100g'] ?? 0) * 10) / 10,
+    protein:     Math.round((n['proteins_100g'] ?? 0) * 10) / 10,
+    carbs:       Math.round((n['carbohydrates_100g'] ?? 0) * 10) / 10,
+    fat:         Math.round((n['fat_100g'] ?? 0) * 10) / 10,
+    fiber:       Math.round((n['fiber_100g'] ?? 0) * 10) / 10,
+    sugar:       Math.round((n['sugars_100g'] ?? 0) * 10) / 10,
+    sodium:      Math.round((n['sodium_100g'] ?? 0) * 1000 * 10) / 10, // g → mg
+    cholesterol: Math.round((n['cholesterol_100g'] ?? 0) * 1000 * 10) / 10, // g → mg
+  }
+}
+
+async function getFoodByBarcodeOFF(upc: string): Promise<FoodItem | null> {
   try {
+    const fields = 'code,product_name,brands,nutriments,serving_size'
+    const res = await fetch(`${OFF_BASE}/${encodeURIComponent(upc)}.json?fields=${fields}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data.status === 0 || !data.product?.product_name) return null
+    const p = data.product
+    return {
+      fdcId: 0, // OFF doesn't have fdcId
+      description: p.product_name,
+      brandOwner: p.brands || undefined,
+      nutrition: extractNutritionFromOFF(p.nutriments || {}),
+    }
+  } catch {
+    return null
+  }
+}
+
+async function getFoodByBarcodeUSDA(upc: string): Promise<FoodItem | null> {
+  try {
+    // Try exact gtinUpc match first (most accurate)
     const res = await fetch(
       `${BASE_URL}/foods/search?query=${encodeURIComponent(upc)}&dataType=Branded&api_key=${API_KEY}&pageSize=1`
     )
@@ -73,6 +110,11 @@ export async function getFoodByBarcode(upc: string): Promise<FoodItem | null> {
     const foods = data.foods || []
     if (foods.length === 0) return null
     const food = foods[0]
+    // Verify the UPC actually matches (USDA text search can return unrelated results)
+    const gtinMatch = food.gtinUpc === upc ||
+      food.gtinUpc === upc.padStart(14, '0') ||
+      upc === food.gtinUpc?.replace(/^0+/, '')
+    if (!gtinMatch) return null
     return {
       fdcId: food.fdcId,
       description: food.description,
@@ -82,4 +124,16 @@ export async function getFoodByBarcode(upc: string): Promise<FoodItem | null> {
   } catch {
     return null
   }
+}
+
+export async function getFoodByBarcode(upc: string): Promise<FoodItem | null> {
+  // 1. Try Open Food Facts first — best coverage for US branded products
+  const offResult = await getFoodByBarcodeOFF(upc)
+  if (offResult) return offResult
+
+  // 2. Fallback to USDA Branded Foods with strict UPC match
+  const usdaResult = await getFoodByBarcodeUSDA(upc)
+  if (usdaResult) return usdaResult
+
+  return null
 }
