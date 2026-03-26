@@ -49,11 +49,12 @@ export function BarcodeScanner({ onFound, onClose }: Props) {
           scannerRef.current = false
           QuaggaInstance.stop()
           setStatus('loading')
+          setErrorMsg(`Buscando ${code}...`)
           const food = await getFoodByBarcode(code)
           if (food) {
             onFound(food)
           } else {
-            setErrorMsg(`No se encontró el producto (${code})`)
+            setErrorMsg(`Producto no encontrado (${code}). Intenta buscarlo manualmente.`)
             setStatus('error')
           }
         })
