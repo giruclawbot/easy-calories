@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
-import { getUserProfile, saveUserProfile, UserProfile, GoalDetails } from '@/lib/firestore'
+import { getUserProfile, saveUserProfile, getAllDaysData, UserProfile, GoalDetails } from '@/lib/firestore'
 import { useI18n } from '@/components/I18nProvider'
 import { locales } from '@/lib/i18n'
 import { CalorieCalculator } from '@/components/CalorieCalculator'
 import type { UnitSystem } from '@/lib/units'
 import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm, formatWeight } from '@/lib/units'
+import { exportHistoricalCSV, exportHistoricalMarkdown, exportHistoricalPDF, HistoricalExportData } from '@/lib/export'
 
 const LOCALE_LABELS: Record<string, string> = { es: 'Español', en: 'English' }
 
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [exportLoading, setExportLoading] = useState<'csv' | 'markdown' | 'pdf' | null>(null)
   const [showCalculator, setShowCalculator] = useState(false)
 
   // Display states for imperial
@@ -106,6 +108,25 @@ export default function ProfilePage() {
     }
     await saveUserProfile(user.uid, updated)
     setShowCalculator(false)
+  }
+
+  async function handleExportHistory(fmt: 'csv' | 'markdown' | 'pdf') {
+    if (!user) return
+    setExportLoading(fmt)
+    try {
+      const allDays = await getAllDaysData(user.uid)
+      const days = Object.entries(allDays).map(([date, dayData]) => ({
+        date,
+        meals: dayData.meals ?? [],
+        totalCalories: dayData.totalCalories ?? 0,
+      }))
+      const data: HistoricalExportData = { days, profile }
+      if (fmt === 'csv') exportHistoricalCSV(data, locale)
+      else if (fmt === 'markdown') exportHistoricalMarkdown(data, locale)
+      else exportHistoricalPDF(data, locale)
+    } finally {
+      setExportLoading(null)
+    }
   }
 
   if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">{t('common.loading')}</div>
@@ -316,6 +337,28 @@ export default function ProfilePage() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Export history */}
+        <div className="bg-gray-900 rounded-2xl p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">{t('export.history')}</h2>
+          <p className="text-xs text-gray-500">{t('export.historyDesc')}</p>
+          <div className="flex gap-2">
+            {(['csv', 'markdown', 'pdf'] as const).map(fmt => (
+              <button
+                key={fmt}
+                onClick={() => handleExportHistory(fmt)}
+                disabled={exportLoading !== null}
+                className="flex-1 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 text-xs font-medium transition-colors"
+              >
+                {exportLoading === fmt
+                  ? t('export.loading')
+                  : fmt === 'csv' ? `📄 ${t('export.csv')}`
+                  : fmt === 'markdown' ? `📝 ${t('export.markdown')}`
+                  : `🖨️ ${t('export.pdf')}`}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Save button */}
