@@ -9,6 +9,8 @@ import { CalorieCalculator } from '@/components/CalorieCalculator'
 import type { UnitSystem } from '@/lib/units'
 import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm, formatWeight } from '@/lib/units'
 import { exportHistoricalCSV, exportHistoricalMarkdown, exportHistoricalPDF, HistoricalExportData } from '@/lib/export'
+import { calculateIdealHydration } from '@/lib/hydration'
+import type { ActivityLevel } from '@/lib/hydration'
 
 const LOCALE_LABELS: Record<string, string> = { es: 'Español', en: 'English' }
 
@@ -22,6 +24,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [exportLoading, setExportLoading] = useState<'csv' | 'markdown' | 'pdf' | null>(null)
   const [showCalculator, setShowCalculator] = useState(false)
+  const [hydrationCalcResult, setHydrationCalcResult] = useState<number | null>(null)
 
   // Display states for imperial
   const [displayWeightLbs, setDisplayWeightLbs] = useState<number | ''>('')
@@ -367,21 +370,63 @@ export default function ProfilePage() {
 
           {/* Goal input — only shown when enabled */}
           {profile.hydrationEnabled && (
-            <div>
-              <label className="text-sm text-gray-400 block mb-1.5">{t('hydration.goal')}</label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={profile.hydrationGoalMl ?? 2000}
-                  onChange={e => setProfile(p => ({ ...p, hydrationGoalMl: e.target.value ? Number(e.target.value) : 2000 }))}
-                  min={500}
-                  max={5000}
-                  step={100}
-                  placeholder="2000"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 pr-10"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-gray-500">{t('hydration.goalUnit')}</span>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-400 block mb-1.5">{t('hydration.goal')}</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={profile.hydrationGoalMl ?? 2000}
+                    onChange={e => setProfile(p => ({ ...p, hydrationGoalMl: e.target.value ? Number(e.target.value) : 2000 }))}
+                    min={500}
+                    max={5000}
+                    step={100}
+                    placeholder="2000"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 pr-10"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-gray-500">{t('hydration.goalUnit')}</span>
+                </div>
               </div>
+
+              {/* Calculate ideal hydration button */}
+              {profile.weightKg && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const result = calculateIdealHydration({
+                        weightKg: profile.weightKg!,
+                        sex: profile.sex,
+                        activity: (profile.goalDetails?.ratePerWeek
+                          ? { slow: 'light', moderate: 'moderate', fast: 'active' }[profile.goalDetails.ratePerWeek]
+                          : undefined) as ActivityLevel | undefined,
+                      })
+                      setHydrationCalcResult(result.recommendedMl)
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-blue-900/30 hover:bg-blue-800/40 border border-blue-700/50 text-blue-300 text-sm rounded-lg transition-colors"
+                  >
+                    💧 {t('hydration.calculate')}
+                  </button>
+
+                  {hydrationCalcResult !== null && (
+                    <div className="mt-2 bg-blue-950/60 border border-blue-700/40 rounded-xl p-3 space-y-2">
+                      <p className="text-xs text-gray-400">{t('hydration.calculatedGoal')}</p>
+                      <p className="text-2xl font-bold text-blue-300">{hydrationCalcResult} <span className="text-sm text-gray-400">ml/día</span></p>
+                      <p className="text-xs text-gray-500">{t('hydration.calcBasis')}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfile(p => ({ ...p, hydrationGoalMl: hydrationCalcResult }))
+                          setHydrationCalcResult(null)
+                        }}
+                        className="w-full py-2 bg-blue-700 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        {t('hydration.applyGoal')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

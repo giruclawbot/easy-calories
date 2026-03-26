@@ -213,6 +213,10 @@
     "customAmount": "Cantidad",
     "progress": "{current} ml de {goal} ml",
     "complete": "¡Meta alcanzada! 💧",
-    "readOnly": "Solo lectura — selecciona hoy para registrar"
+    "readOnly": "Solo lectura — selecciona hoy para registrar",
+    "calculate": "Calcular mi hidratación ideal",
+    "calculatedGoal": "Meta recomendada para ti",
+    "calcBasis": "Basado en peso, actividad y sexo (NAM/OMS)",
+    "applyGoal": "Usar esta meta"
   }
 }
