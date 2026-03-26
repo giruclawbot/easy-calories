@@ -178,5 +178,11 @@
     "add": "+ Agregar",
     "dismiss": "Ocultar",
     "added": "✓"
+  },
+  "edit": {
+    "title": "Editar porción",
+    "adjustQty": "Ajusta la cantidad",
+    "moveTo": "Mover a",
+    "save": "Guardar"
   }
 }
