@@ -64,21 +64,28 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
 
   function selectFood(food: FoodItem) {
     setSelectedFood(food)
-    setAmount(1)
+    // Default to 100g for gram-based entries (USDA is per 100g)
+    // For non-gram units default to 1
+    setAmount(100)
     setUnit('g')
     setNotes('')
     setShowManual(false)
   }
 
-  function getCaloriesForEntry(food: FoodItem, amt: number): number {
-    // nutrition is per 100g; scale by amount
-    return Math.round((food.nutrition.calories * amt) / 100)
+  function getCaloriesForEntry(food: FoodItem, amt: number, entryUnit: string): number {
+    if (entryUnit === 'g' || entryUnit === 'ml') {
+      // USDA nutrition is per 100g/ml
+      return Math.round((food.nutrition.calories * amt) / 100)
+    }
+    // For capsule/tablet/scoop: treat as 1 serving = calories as-is per unit
+    // Use per-100g value as a rough estimate scaled to amt
+    return Math.round(food.nutrition.calories * amt)
   }
 
   async function handleAdd() {
     if (!selectedFood || !amount || Number(amount) <= 0) return
     setAdding(true)
-    const cal = getCaloriesForEntry(selectedFood, Number(amount))
+    const cal = getCaloriesForEntry(selectedFood, Number(amount), unit)
     const entry: SupplementEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       name: selectedFood.description,
@@ -296,16 +303,19 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
                 )}
               </div>
 
-              {/* Caloric badge */}
-              {getCaloriesForEntry(selectedFood, Number(amount) || 0) > CALORIC_THRESHOLD ? (
-                <span className="inline-block text-xs bg-yellow-900/40 text-yellow-300 border border-yellow-700/40 rounded-full px-2 py-0.5">
-                  {t('supplements.caloric')}
-                </span>
-              ) : (
-                <span className="inline-block text-xs bg-teal-900/40 text-teal-300 border border-teal-700/40 rounded-full px-2 py-0.5">
-                  {t('supplements.nonCaloric')}
-                </span>
-              )}
+              {/* Caloric badge + calorie preview */}
+              {(() => {
+                const cal = getCaloriesForEntry(selectedFood, Number(amount) || 0, unit)
+                return cal > CALORIC_THRESHOLD ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs bg-yellow-900/40 text-yellow-300 border border-yellow-700/40 rounded-full px-2 py-0.5">
+                    {t('supplements.caloric')} · <strong>{cal} kcal</strong>
+                  </span>
+                ) : (
+                  <span className="inline-block text-xs bg-teal-900/40 text-teal-300 border border-teal-700/40 rounded-full px-2 py-0.5">
+                    {t('supplements.nonCaloric')}
+                  </span>
+                )
+              })()}
 
               <div className="flex gap-2">
                 <input
