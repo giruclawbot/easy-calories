@@ -6,6 +6,13 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.16.1] - 2026-03-26
+
+### Changed
+- Dashboard: moved "Export today" section below SupplementTracker, just before the footer
+
+---
+
 ## [1.16.0] - 2026-03-26
 
 ### Added

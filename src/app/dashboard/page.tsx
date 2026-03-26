@@ -320,23 +320,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Export today */}
-      <div className="flex flex-col items-center gap-2 pt-2">
-        <p className="text-xs text-gray-500">{t('export.today')}</p>
-        <div className="flex gap-2">
-          <button onClick={() => handleExportDaily('csv')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
-            📄 {t('export.csv')}
-          </button>
-          <button onClick={() => handleExportDaily('markdown')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
-            📝 {t('export.markdown')}
-          </button>
-          <button onClick={() => handleExportDaily('pdf')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
-            🖨️ {t('export.pdf')}
-          </button>
-        </div>
-        {exportMsg && <p className="text-xs text-yellow-400">{exportMsg}</p>}
-      </div>
-
       {/* Hydration — optional, shown at the bottom */}
       {user && userProfile?.hydrationEnabled && (
         <HydrationTracker
@@ -356,6 +339,23 @@ export default function DashboardPage() {
           onCaloricSupplementAdded={handleCaloricSupplement}
         />
       )}
+
+      {/* Export today */}
+      <div className="flex flex-col items-center gap-2 pt-2">
+        <p className="text-xs text-gray-500">{t('export.today')}</p>
+        <div className="flex gap-2">
+          <button onClick={() => handleExportDaily('csv')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            📄 {t('export.csv')}
+          </button>
+          <button onClick={() => handleExportDaily('markdown')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            📝 {t('export.markdown')}
+          </button>
+          <button onClick={() => handleExportDaily('pdf')} className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors">
+            🖨️ {t('export.pdf')}
+          </button>
+        </div>
+        {exportMsg && <p className="text-xs text-yellow-400">{exportMsg}</p>}
+      </div>
 
       {/* Footer */}
       <p className="text-center text-xs text-gray-700 pt-2">
