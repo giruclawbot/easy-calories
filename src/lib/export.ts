@@ -320,8 +320,48 @@ function printViaIframe(html: string): void {
   }
 }
 
+function openHtmlBlob(html: string, filename: string): void {
+  // Open HTML as a blob URL in a new tab — works in iOS Safari and PWA standalone
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener'
+  // On iOS Safari, _blank opens the HTML in the browser where the user can
+  // use the Share → Print flow or save as PDF via Share → Save to Files
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+function isPWAStandalone(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia?.('(display-mode: standalone)').matches ||
+    ('standalone' in window.navigator && (window.navigator as Record<string, unknown>).standalone === true)
+}
+
+/**
+ * Universal PDF export:
+ * - iOS (Safari / PWA): opens HTML blob in new tab → user can Share → Print / Save PDF
+ * - Desktop / Android Chrome: uses hidden iframe + window.print()
+ */
+export function exportPDF(html: string, filename: string): void {
+  if (isIOS() || isPWAStandalone()) {
+    openHtmlBlob(html, filename)
+  } else {
+    printViaIframe(html)
+  }
+}
+
 export function exportDailyPDF(data: DailyExportData, locale = 'en'): void {
   const t = calcTotals(data.meals)
+  const filename = `easy-calories-${data.date}.pdf`
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Easy Calories — ${data.date}</title>
     <style>${PDF_CSS}</style></head>
@@ -333,13 +373,14 @@ export function exportDailyPDF(data: DailyExportData, locale = 'en'): void {
     ${buildMealTableHTML(data.meals, locale)}
     <div class="footer">Exported from ezcals.dev · ${new Date().toISOString().slice(0,10)}</div>
   </body></html>`
-  printViaIframe(html)
+  exportPDF(html, filename)
 }
 
 export function exportHistoricalPDF(data: HistoricalExportData, locale = 'en'): void {
   const allMeals = data.days.flatMap(d => d.meals)
   const grandTotal = calcTotals(allMeals)
   const daysHTML = data.days.map(d => buildDayHTML(d, locale)).join('\n<hr style="margin:20px 0;">\n')
+  const filename = `easy-calories-history.pdf`
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Easy Calories — History</title>
     <style>${PDF_CSS}</style></head>
@@ -352,5 +393,5 @@ export function exportHistoricalPDF(data: HistoricalExportData, locale = 'en'): 
     ${daysHTML}
     <div class="footer">Exported from ezcals.dev · ${new Date().toISOString().slice(0,10)}</div>
   </body></html>`
-  printViaIframe(html)
+  exportPDF(html, filename)
 }

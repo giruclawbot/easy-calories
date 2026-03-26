@@ -222,15 +222,17 @@ describe('exportHistoricalMarkdown', () => {
   })
 })
 
-// ── PDF (iframe) ──────────────────────────────────────────────────────────────
+// ── PDF (iframe + iOS fallback) ───────────────────────────────────────────────
 
 describe('exportDailyPDF', () => {
-  it('creates an iframe element (not window.open)', () => {
+  it('creates an iframe element on non-iOS', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportDailyPDF(dailyData)
     expect(document.createElement).toHaveBeenCalledWith('iframe')
   })
 
   it('writes HTML with meal data into iframe document', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportDailyPDF(dailyData)
     mockIframe.onload?.()
     expect(mockIframe.contentDocument.write).toHaveBeenCalledTimes(1)
@@ -242,12 +244,14 @@ describe('exportDailyPDF', () => {
   })
 
   it('calls print on iframe contentWindow on load', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportDailyPDF(dailyData)
     mockIframe.onload?.()
     expect(mockIframe.contentWindow.print).toHaveBeenCalled()
   })
 
   it('includes macro totals row in PDF table', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportDailyPDF(dailyData)
     mockIframe.onload?.()
     const html: string = mockIframe.contentDocument.write.mock.calls[0][0]
@@ -256,15 +260,26 @@ describe('exportDailyPDF', () => {
     expect(html).toContain('Fiber')
     expect(html).toContain('Sodium')
   })
+
+  it('uses blob URL on iOS Safari instead of iframe', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)', configurable: true })
+    exportDailyPDF(dailyData)
+    // iOS path: uses anchor with blob URL, not iframe
+    expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1)
+    expect(mockAnchor.target).toBe('_blank')
+    expect(mockAnchor.click).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('exportHistoricalPDF', () => {
-  it('creates an iframe element', () => {
+  it('creates an iframe element on non-iOS', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportHistoricalPDF(historicalData)
     expect(document.createElement).toHaveBeenCalledWith('iframe')
   })
 
   it('includes all days in HTML', () => {
+    Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (Macintosh)', configurable: true })
     exportHistoricalPDF(historicalData)
     mockIframe.onload?.()
     const html: string = mockIframe.contentDocument.write.mock.calls[0][0]
