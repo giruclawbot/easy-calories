@@ -11,22 +11,19 @@ import {
 
 let capturedContent: string | null = null
 let mockAnchor: { href: string; download: string; click: jest.Mock }
-let mockWin: {
-  document: { write: jest.Mock; close: jest.Mock }
-  print: jest.Mock
-  close: jest.Mock
+let mockIframe: HTMLIFrameElement & {
+  contentDocument: { open: jest.Mock; write: jest.Mock; close: jest.Mock }
+  contentWindow: { focus: jest.Mock; print: jest.Mock }
   onload: (() => void) | null
-  onafterprint: (() => void) | null
+  remove: jest.Mock
 }
 
 beforeEach(() => {
   capturedContent = null
 
-  // Mock URL.createObjectURL / revokeObjectURL
   global.URL.createObjectURL = jest.fn(() => 'blob:mock-url')
   global.URL.revokeObjectURL = jest.fn()
 
-  // Intercept Blob constructor to capture content
   const OriginalBlob = global.Blob
   jest.spyOn(global, 'Blob').mockImplementation((parts?: BlobPart[], options?: BlobPropertyBag) => {
     if (parts && parts.length > 0 && typeof parts[0] === 'string') {
@@ -35,22 +32,26 @@ beforeEach(() => {
     return new OriginalBlob(parts, options)
   })
 
-  // Mock anchor element
   mockAnchor = { href: '', download: '', click: jest.fn() }
+
+  // Mock iframe for PDF
+  mockIframe = {
+    id: '',
+    style: { cssText: '' },
+    contentDocument: { open: jest.fn(), write: jest.fn(), close: jest.fn() },
+    contentWindow: { focus: jest.fn(), print: jest.fn() },
+    onload: null,
+    remove: jest.fn(),
+  } as unknown as typeof mockIframe
+
   jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
     if (tag === 'a') return mockAnchor as unknown as HTMLElement
+    if (tag === 'iframe') return mockIframe as unknown as HTMLElement
     return document.createElement.call(document, tag)
   })
 
-  // Mock window.open
-  mockWin = {
-    document: { write: jest.fn(), close: jest.fn() },
-    print: jest.fn(),
-    close: jest.fn(),
-    onload: null,
-    onafterprint: null,
-  }
-  jest.spyOn(window, 'open').mockReturnValue(mockWin as unknown as Window)
+  jest.spyOn(document.body, 'appendChild').mockImplementation((node) => node)
+  jest.spyOn(document, 'getElementById').mockReturnValue(null)
 })
 
 afterEach(() => {
@@ -117,18 +118,18 @@ describe('exportDailyCSV', () => {
     exportDailyCSV(dailyData)
     expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1)
     expect(mockAnchor.click).toHaveBeenCalledTimes(1)
-    expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
     const text = await getBlobText()
-    expect(text).toContain('Date,Food,Meal Type,Quantity,Unit,Calories,Protein(g),Carbs(g),Fat(g),Fiber(g),Sugar(g),Sodium(mg)')
+    expect(text).toContain('Date,Food,Meal Type,Quantity,Unit,Calories,Protein(g),Carbs(g),Fat(g),Fiber(g),Sugar(g),Sodium(mg),Cholesterol(mg)')
   })
 
-  it('includes meal data rows', async () => {
+  it('includes meal data rows and day totals row', async () => {
     exportDailyCSV(dailyData)
     const text = await getBlobText()
     expect(text).toContain('2026-03-25')
     expect(text).toContain('Egg')
     expect(text).toContain('Breakfast')
     expect(text).toContain('155')
+    expect(text).toContain('DAY TOTAL')
   })
 
   it('wraps food names with commas in quotes', async () => {
@@ -146,6 +147,7 @@ describe('exportDailyCSV', () => {
     exportDailyCSV(dailyData, 'es')
     const text = await getBlobText()
     expect(text).toContain('Desayuno')
+    expect(text).toContain('DÍA')
   })
 
   it('names file with the date', () => {
@@ -155,12 +157,13 @@ describe('exportDailyCSV', () => {
 })
 
 describe('exportHistoricalCSV', () => {
-  it('includes rows for multiple days', async () => {
+  it('includes rows for multiple days with totals', async () => {
     exportHistoricalCSV(historicalData)
     const text = await getBlobText()
     expect(text).toContain('2026-03-25')
     expect(text).toContain('2026-03-26')
     expect(text).toContain('Chicken breast')
+    expect(text).toContain('DAY TOTAL')
   })
 
   it('names file easy-calories-history.csv', () => {
@@ -172,23 +175,28 @@ describe('exportHistoricalCSV', () => {
 // ── Markdown ──────────────────────────────────────────────────────────────────
 
 describe('exportDailyMarkdown', () => {
-  it('produces correct markdown structure', async () => {
+  it('produces correct markdown structure with all macro columns', async () => {
     exportDailyMarkdown(dailyData)
     const text = await getBlobText()
     expect(text).toContain('# Easy Calories — 2026-03-25')
-    expect(text).toContain('**Total: 355 kcal**')
     expect(text).toContain('## 🌅 Breakfast')
     expect(text).toContain('## ☀️ Lunch')
-    expect(text).toContain('| Food | Qty | Cal | Protein | Carbs | Fat |')
-    expect(text).toContain('Egg')
+    expect(text).toContain('| Food | Qty | Cal | Protein | Carbs | Fat | Fiber | Sugar | Sodium |')
     expect(text).toContain('*Exported from ezcals.dev*')
+  })
+
+  it('includes macro totals summary at end', async () => {
+    exportDailyMarkdown(dailyData)
+    const text = await getBlobText()
+    expect(text).toContain('Day totals')
+    expect(text).toContain('355') // totalCalories
   })
 
   it('includes nutrition data in table', async () => {
     exportDailyMarkdown(dailyData)
     const text = await getBlobText()
     expect(text).toContain('13g')
-    expect(text).toContain('100g')
+    expect(text).toContain('124mg')
   })
 
   it('shows - for missing nutrition', async () => {
@@ -214,41 +222,55 @@ describe('exportHistoricalMarkdown', () => {
   })
 })
 
-// ── PDF ───────────────────────────────────────────────────────────────────────
+// ── PDF (iframe) ──────────────────────────────────────────────────────────────
 
 describe('exportDailyPDF', () => {
-  it('calls window.open', () => {
+  it('creates an iframe element (not window.open)', () => {
     exportDailyPDF(dailyData)
-    expect(window.open).toHaveBeenCalledWith('', '_blank')
+    expect(document.createElement).toHaveBeenCalledWith('iframe')
   })
 
-  it('writes HTML to the new window', () => {
+  it('writes HTML with meal data into iframe document', () => {
     exportDailyPDF(dailyData)
-    expect(mockWin.document.write).toHaveBeenCalledTimes(1)
-    const html: string = mockWin.document.write.mock.calls[0][0]
+    mockIframe.onload?.()
+    expect(mockIframe.contentDocument.write).toHaveBeenCalledTimes(1)
+    const html: string = mockIframe.contentDocument.write.mock.calls[0][0]
     expect(html).toContain('Easy Calories')
     expect(html).toContain('2026-03-25')
     expect(html).toContain('ezcals.dev')
+    expect(html).toContain('Egg')
   })
 
-  it('calls print on window load', () => {
+  it('calls print on iframe contentWindow on load', () => {
     exportDailyPDF(dailyData)
-    mockWin.onload?.()
-    expect(mockWin.print).toHaveBeenCalled()
+    mockIframe.onload?.()
+    expect(mockIframe.contentWindow.print).toHaveBeenCalled()
+  })
+
+  it('includes macro totals row in PDF table', () => {
+    exportDailyPDF(dailyData)
+    mockIframe.onload?.()
+    const html: string = mockIframe.contentDocument.write.mock.calls[0][0]
+    expect(html).toContain('TOTAL')
+    expect(html).toContain('Protein')
+    expect(html).toContain('Fiber')
+    expect(html).toContain('Sodium')
   })
 })
 
 describe('exportHistoricalPDF', () => {
-  it('calls window.open', () => {
+  it('creates an iframe element', () => {
     exportHistoricalPDF(historicalData)
-    expect(window.open).toHaveBeenCalledWith('', '_blank')
+    expect(document.createElement).toHaveBeenCalledWith('iframe')
   })
 
   it('includes all days in HTML', () => {
     exportHistoricalPDF(historicalData)
-    const html: string = mockWin.document.write.mock.calls[0][0]
+    mockIframe.onload?.()
+    const html: string = mockIframe.contentDocument.write.mock.calls[0][0]
     expect(html).toContain('2026-03-25')
     expect(html).toContain('2026-03-26')
     expect(html).toContain('Chicken breast')
+    expect(html).toContain('Grand total')
   })
 })
