@@ -213,6 +213,10 @@
     "customAmount": "Amount",
     "progress": "{current} ml of {goal} ml",
     "complete": "Goal reached! 💧",
-    "readOnly": "Read-only — select today to log"
+    "readOnly": "Read-only — select today to log",
+    "calculate": "Calculate my ideal hydration",
+    "calculatedGoal": "Recommended goal for you",
+    "calcBasis": "Based on weight, activity and sex (NAM/WHO)",
+    "applyGoal": "Use this goal"
   }
 }
