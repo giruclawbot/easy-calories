@@ -178,5 +178,11 @@
     "add": "+ Add",
     "dismiss": "Hide",
     "added": "✓"
+  },
+  "edit": {
+    "title": "Edit portion",
+    "adjustQty": "Adjust quantity",
+    "moveTo": "Move to",
+    "save": "Save"
   }
 }
