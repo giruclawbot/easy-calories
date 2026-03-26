@@ -23,7 +23,7 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
   const [searching, setSearching] = useState(false)
   const [searched, setSearched] = useState(false)
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null)
-  const [amount, setAmount] = useState<number | ''>(1)
+  const [amount, setAmount] = useState<string>('100')  // string for decimal input support
   const [unit, setUnit] = useState<string>('g')
   const [notes, setNotes] = useState('')
   const [adding, setAdding] = useState(false)
@@ -65,8 +65,7 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
   function selectFood(food: FoodItem) {
     setSelectedFood(food)
     // Default to 100g for gram-based entries (USDA is per 100g)
-    // For non-gram units default to 1
-    setAmount(100)
+    setAmount('100')
     setUnit('g')
     setNotes('')
     setShowManual(false)
@@ -74,87 +73,98 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
 
   function getCaloriesForEntry(food: FoodItem, amt: number, entryUnit: string): number {
     if (entryUnit === 'g' || entryUnit === 'ml') {
-      // USDA nutrition is per 100g/ml
       return Math.round((food.nutrition.calories * amt) / 100)
     }
-    // For capsule/tablet/scoop: treat as 1 serving = calories as-is per unit
-    // Use per-100g value as a rough estimate scaled to amt
+    // capsule/tablet/scoop: treat per-unit (amt units × calories-per-100g as rough estimate)
     return Math.round(food.nutrition.calories * amt)
   }
 
+  function parseAmount(val: string): number {
+    const n = parseFloat(val)
+    return isNaN(n) || n <= 0 ? 0 : n
+  }
+
   async function handleAdd() {
-    if (!selectedFood || !amount || Number(amount) <= 0) return
+    const parsedAmt = parseAmount(amount)
+    if (!selectedFood || parsedAmt <= 0) return
     setAdding(true)
-    const cal = getCaloriesForEntry(selectedFood, Number(amount), unit)
-    const entry: SupplementEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      name: selectedFood.description,
-      brand: selectedFood.brandOwner,
-      amount: Number(amount),
-      unit,
-      calories: cal,
-      nutrition: cal > CALORIC_THRESHOLD ? selectedFood.nutrition : undefined,
-      timestamp: new Date().toISOString(),
-      notes: notes.trim() || undefined,
-    }
+    try {
+      const cal = getCaloriesForEntry(selectedFood, parsedAmt, unit)
+      const entry: SupplementEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: selectedFood.description,
+        brand: selectedFood.brandOwner || undefined,
+        amount: parsedAmt,
+        unit,
+        calories: cal,
+        nutrition: cal > CALORIC_THRESHOLD ? selectedFood.nutrition : undefined,
+        timestamp: new Date().toISOString(),
+        notes: notes.trim() || undefined,
+      }
 
-    await addSupplement(uid, date, entry)
-    await loadLog()
+      await addSupplement(uid, date, entry)
+      await loadLog()
 
-    if (cal > CALORIC_THRESHOLD && isToday && onCaloricSupplementAdded) {
-      onCaloricSupplementAdded(entry)
-      setConfirmation(t('supplements.addedToMeals'))
-    } else {
-      setConfirmation(t('supplements.logged'))
+      if (cal > CALORIC_THRESHOLD && isToday && onCaloricSupplementAdded) {
+        onCaloricSupplementAdded(entry)
+        setConfirmation(t('supplements.addedToMeals'))
+      } else {
+        setConfirmation(t('supplements.logged'))
+      }
+      setTimeout(() => setConfirmation(null), 3000)
+      setSelectedFood(null)
+      setSearchQuery('')
+      setSearchResults([])
+      setSearched(false)
+      setTab('log')
+    } finally {
+      setAdding(false)
     }
-    setTimeout(() => setConfirmation(null), 3000)
-    setSelectedFood(null)
-    setSearchQuery('')
-    setSearchResults([])
-    setSearched(false)
-    setAdding(false)
-    setTab('log')
   }
 
   async function handleManualAdd() {
     if (!manualName.trim()) return
     setAdding(true)
-    const cal = Number(manualCalories) || 0
-    const entry: SupplementEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      name: manualName.trim(),
-      amount: Number(amount) || 1,
-      unit,
-      calories: cal,
-      nutrition: cal > CALORIC_THRESHOLD ? {
+    try {
+      const parsedAmt = parseAmount(amount)
+      const cal = Number(manualCalories) || 0
+      const entry: SupplementEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name: manualName.trim(),
+        amount: parsedAmt || 1,
+        unit,
         calories: cal,
-        protein: Number(manualProtein) || 0,
-        carbs: Number(manualCarbs) || 0,
-        fat: Number(manualFat) || 0,
-        fiber: 0, sugar: 0, sodium: 0, cholesterol: 0,
-      } : undefined,
-      timestamp: new Date().toISOString(),
-      notes: notes.trim() || undefined,
-    }
+        nutrition: cal > CALORIC_THRESHOLD ? {
+          calories: cal,
+          protein: Number(manualProtein) || 0,
+          carbs: Number(manualCarbs) || 0,
+          fat: Number(manualFat) || 0,
+          fiber: 0, sugar: 0, sodium: 0, cholesterol: 0,
+        } : undefined,
+        timestamp: new Date().toISOString(),
+        notes: notes.trim() || undefined,
+      }
 
-    await addSupplement(uid, date, entry)
-    await loadLog()
+      await addSupplement(uid, date, entry)
+      await loadLog()
 
-    if (cal > CALORIC_THRESHOLD && isToday && onCaloricSupplementAdded) {
-      onCaloricSupplementAdded(entry)
-      setConfirmation(t('supplements.addedToMeals'))
-    } else {
-      setConfirmation(t('supplements.logged'))
+      if (cal > CALORIC_THRESHOLD && isToday && onCaloricSupplementAdded) {
+        onCaloricSupplementAdded(entry)
+        setConfirmation(t('supplements.addedToMeals'))
+      } else {
+        setConfirmation(t('supplements.logged'))
+      }
+      setTimeout(() => setConfirmation(null), 3000)
+      setShowManual(false)
+      setManualName('')
+      setManualCalories('')
+      setManualProtein('')
+      setManualCarbs('')
+      setManualFat('')
+      setTab('log')
+    } finally {
+      setAdding(false)
     }
-    setTimeout(() => setConfirmation(null), 3000)
-    setShowManual(false)
-    setManualName('')
-    setManualCalories('')
-    setManualProtein('')
-    setManualCarbs('')
-    setManualFat('')
-    setAdding(false)
-    setTab('log')
   }
 
   async function handleRemove(entryId: string) {
@@ -263,9 +273,9 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
                   <input
                     type="number"
                     value={amount}
-                    onChange={e => setAmount(e.target.value ? Number(e.target.value) : '')}
+                    onChange={e => setAmount(e.target.value)}
                     placeholder={t('supplements.amount')}
-                    min={0.1}
+                    min={0.01} step="any"
                     className="w-full bg-teal-950/50 border border-teal-700/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
                   />
                 </div>
@@ -305,7 +315,7 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
 
               {/* Caloric badge + calorie preview */}
               {(() => {
-                const cal = getCaloriesForEntry(selectedFood, Number(amount) || 0, unit)
+                const cal = getCaloriesForEntry(selectedFood, parseAmount(amount), unit)
                 return cal > CALORIC_THRESHOLD ? (
                   <span className="inline-flex items-center gap-1.5 text-xs bg-yellow-900/40 text-yellow-300 border border-yellow-700/40 rounded-full px-2 py-0.5">
                     {t('supplements.caloric')} · <strong>{cal} kcal</strong>
@@ -321,9 +331,9 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
                 <input
                   type="number"
                   value={amount}
-                  onChange={e => setAmount(e.target.value ? Number(e.target.value) : '')}
+                  onChange={e => setAmount(e.target.value)}
                   placeholder={t('supplements.amount')}
-                  min={0.1}
+                  min={0.01} step="any"
                   className="flex-1 bg-teal-950/50 border border-teal-700/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-teal-500"
                 />
                 <select
@@ -346,7 +356,7 @@ export function SupplementTracker({ uid, date, isToday, onCaloricSupplementAdded
               <div className="flex gap-2">
                 <button
                   onClick={handleAdd}
-                  disabled={adding || !amount || Number(amount) <= 0}
+                  disabled={adding || parseAmount(amount) <= 0}
                   className="flex-1 py-2 bg-teal-700 hover:bg-teal-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   {t('supplements.add')}

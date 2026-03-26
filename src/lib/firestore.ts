@@ -308,16 +308,30 @@ export async function addSupplement(uid: string, date: string, entry: Supplement
   const db = getFirebaseDb()
   if (!db) return
   const ref = doc(db, 'users', uid, 'supplements', date)
+
+  // Strip undefined fields — Firestore arrayUnion rejects objects with undefined values
+  const cleanEntry: Record<string, unknown> = {
+    id: entry.id,
+    name: entry.name,
+    amount: entry.amount,
+    unit: entry.unit,
+    calories: entry.calories,
+    timestamp: entry.timestamp,
+  }
+  if (entry.brand !== undefined) cleanEntry.brand = entry.brand
+  if (entry.nutrition !== undefined) cleanEntry.nutrition = entry.nutrition
+  if (entry.notes !== undefined) cleanEntry.notes = entry.notes
+
   const snap = await getDoc(ref)
   if (snap.exists()) {
     await updateDoc(ref, {
-      entries: arrayUnion(entry),
+      entries: arrayUnion(cleanEntry),
       updatedAt: serverTimestamp(),
     })
   } else {
     await setDoc(ref, {
       date,
-      entries: [entry],
+      entries: [cleanEntry],
       updatedAt: serverTimestamp(),
     })
   }
