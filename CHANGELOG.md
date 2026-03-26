@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.16.0] - 2026-03-26
+
+### Added
+- Optional supplement tracking feature (opt-in, disabled by default)
+  - New Firestore collection `users/{uid}/supplements/{date}` for daily supplement logs
+  - `SupplementEntry` and `SupplementLog` interfaces in `firestore.ts`
+  - `getSupplementLog`, `addSupplement`, `removeSupplement` Firestore functions
+  - `searchSupplements()` in `usda.ts` — searches USDA Branded + Open Food Facts APIs
+  - Profile page: toggle to enable/disable supplement tracking
+  - Dashboard: `SupplementTracker` widget shown after HydrationTracker when enabled
+  - Search tab: debounced supplement search with results from USDA and Open Food Facts
+  - Add form: amount, unit (g/mg/ml/capsule/tablet/scoop), optional notes
+  - Dual-mode handling: caloric supplements (>5 kcal) added as Meal (mealType: snack) for automatic calorie counting; non-caloric supplements tracked separately
+  - Log tab: view and remove today's supplement entries
+  - Manual add option when search returns no results
+  - Full i18n support (en/es)
+
+---
+
 ## [1.14.0] - 2026-03-26
 
 ### Added

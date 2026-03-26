@@ -218,5 +218,28 @@
     "calculatedGoal": "Recommended goal for you",
     "calcBasis": "Based on weight, activity and sex (NAM/WHO)",
     "applyGoal": "Use this goal"
+  },
+  "supplements": {
+    "title": "Supplements",
+    "settings": "Supplements",
+    "enable": "Enable supplement tracking",
+    "search": "Search supplement...",
+    "searchTab": "Search",
+    "logTab": "Log",
+    "add": "Add",
+    "amount": "Amount",
+    "unit": "Unit",
+    "notes": "Notes (optional)",
+    "caloric": "⚡ Counts toward calories",
+    "nonCaloric": "💊 Tracking only",
+    "addedToMeals": "✓ Added to your meals",
+    "logged": "✓ Logged",
+    "noResults": "No results. Try another term or add manually.",
+    "addManually": "Add manually",
+    "manualName": "Supplement name",
+    "manualCalories": "Calories (optional)",
+    "noEntries": "No supplements logged today",
+    "perServing": "per serving",
+    "brand": "Brand"
   }
 }
