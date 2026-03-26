@@ -337,11 +337,6 @@ export default function DashboardPage() {
         {exportMsg && <p className="text-xs text-yellow-400">{exportMsg}</p>}
       </div>
 
-      {/* Footer */}
-      <p className="text-center text-xs text-gray-700 pt-2">
-        {t('dashboard.version', { version: process.env.NEXT_PUBLIC_APP_VERSION || '' })}
-      </p>
-
       {/* Hydration — optional, shown at the bottom */}
       {user && userProfile?.hydrationEnabled && (
         <HydrationTracker
@@ -361,6 +356,11 @@ export default function DashboardPage() {
           onCaloricSupplementAdded={handleCaloricSupplement}
         />
       )}
+
+      {/* Footer */}
+      <p className="text-center text-xs text-gray-700 pt-2">
+        {t('dashboard.version', { version: process.env.NEXT_PUBLIC_APP_VERSION || '' })}
+      </p>
 
       {/* Calculator modal */}
       {showCalculator && (
