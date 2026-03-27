@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useI18n } from '@/components/I18nProvider'
@@ -36,25 +36,45 @@ export default function NewRecipePage() {
   const [foodQuery, setFoodQuery] = useState('')
   const [foodResults, setFoodResults] = useState<FoodItem[]>([])
   const [searching, setSearching] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  async function handleFoodSearch() {
-    if (!foodQuery.trim()) return
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [])
+
+  async function doSearch(q: string) {
+    if (q.trim().length < 2) return
     setSearching(true)
-    const [usda, community] = await Promise.all([
-      searchFoods(foodQuery),
-      searchCommunityFoods(foodQuery),
-    ])
-    // community foods have nutrition per servingSize, treat as base (scale to 100g equivalent)
-    const communityAsFoodItems: FoodItem[] = community.map(cf => ({
-      fdcId: 0,
-      description: cf.name,
-      brandOwner: cf.brand,
-      nutrition: cf.nutrition,
-    }))
-    setFoodResults([...usda, ...communityAsFoodItems].slice(0, 15))
-    setSearching(false)
+    setHasSearched(true)
+    try {
+      const [usda, community] = await Promise.all([
+        searchFoods(q),
+        searchCommunityFoods(q),
+      ])
+      const communityAsFoodItems: FoodItem[] = community.map(cf => ({
+        fdcId: -1,  // marker for community, unique key handled via index+description
+        description: cf.name,
+        brandOwner: cf.brand,
+        nutrition: cf.nutrition,
+      }))
+      setFoodResults([...communityAsFoodItems, ...usda].slice(0, 15))
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value
+    setFoodQuery(val)
+    setHasSearched(false)
+    setFoodResults([])
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (val.trim().length < 2) return
+    debounceRef.current = setTimeout(() => doSearch(val), 400)
   }
 
   function handleAddIngredient(food: FoodItem) {
@@ -177,30 +197,26 @@ export default function NewRecipePage() {
         <h2 className="text-sm font-semibold text-gray-400 mb-2">{t('recipes.ingredients')}</h2>
 
         {/* Search */}
-        <div className="flex gap-2 mb-3">
+        <div className="relative mb-3">
           <input
             type="text"
             value={foodQuery}
-            onChange={e => setFoodQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleFoodSearch()}
+            onChange={handleQueryChange}
+            onKeyDown={e => e.key === 'Enter' && doSearch(foodQuery)}
             placeholder={t('recipes.searchFood')}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-600 text-sm"
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-600 text-sm pr-10"
           />
-          <button
-            onClick={handleFoodSearch}
-            disabled={searching}
-            className="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {searching ? '...' : '🔍'}
-          </button>
+          {searching && (
+            <div className="absolute right-3 top-3 w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+          )}
         </div>
 
         {/* Food results */}
         {foodResults.length > 0 && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden mb-3">
-            {foodResults.map(food => (
+            {foodResults.map((food, idx) => (
               <button
-                key={food.fdcId}
+                key={`${food.fdcId}-${idx}`}
                 onClick={() => handleAddIngredient(food)}
                 className="w-full px-4 py-2.5 text-left hover:bg-gray-700 border-b border-gray-700 last:border-0 transition-colors"
               >
@@ -212,7 +228,7 @@ export default function NewRecipePage() {
           </div>
         )}
 
-        {foodResults.length === 0 && foodQuery && !searching && (
+        {hasSearched && !searching && foodResults.length === 0 && foodQuery.trim().length >= 2 && (
           <p className="text-gray-500 text-sm mb-3">{t('recipes.noIngredientSearch')}</p>
         )}
 
