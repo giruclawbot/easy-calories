@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { format } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
 import { FoodSearch } from '@/components/FoodSearch'
@@ -94,6 +95,14 @@ export default function AddFoodPage() {
           ))}
         </div>
       </div>
+
+      {/* Recipes shortcut */}
+      <Link
+        href="/dashboard/recipes"
+        className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-3 rounded-xl transition-colors"
+      >
+        🍳 {t('recipes.addShortcut')}
+      </Link>
 
       {/* Quick Add section */}
       {user && <QuickAdd uid={user.uid} onAdd={handleAdd} mealType={selectedMealType} />}

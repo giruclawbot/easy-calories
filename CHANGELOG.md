@@ -8,6 +8,18 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-03-27
+
+### Added
+- Community Recipes feature: create, search, and log recipes (groups of foods)
+- Recipe list page with user's own recipes and community search
+- New recipe page with ingredient search and live nutrition preview
+- Recipe detail page with serving selector and add-to-log
+- Inline edit and delete for recipe owners
+- 🍳 Recetas shortcut on dashboard and add-food page
+- Firestore rules for recipes collection
+- i18n keys for recipes in es.json and en.json
+
 _(Add new changes here during development)_
 
 ---

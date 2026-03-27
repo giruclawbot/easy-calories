@@ -213,12 +213,20 @@ export default function DashboardPage() {
 
       {/* Add button */}
       {selectedDate === today && (
-        <Link
-          href="/dashboard/add"
-          className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors"
-        >
-          {t('dashboard.addMeal')}
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/add"
+            className="flex items-center justify-center gap-2 flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-xl transition-colors"
+          >
+            {t('dashboard.addMeal')}
+          </Link>
+          <Link
+            href="/dashboard/recipes"
+            className="flex items-center justify-center gap-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors text-sm"
+          >
+            🍳 {t('recipes.title')}
+          </Link>
+        </div>
       )}
 
       {/* Meal list */}
