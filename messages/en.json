@@ -241,5 +241,42 @@
     "noEntries": "No supplements logged today",
     "perServing": "per serving",
     "brand": "Brand"
+  },
+  "communityFood": {
+    "addFood": "Add food",
+    "addNewFood": "Add new food",
+    "modalTitle": "Add custom food",
+    "pageTitle": "Add food",
+    "pageDescription": "Foods you add will be available to all users. Help grow the database!",
+    "sectionBasic": "Basic info",
+    "name": "Food name",
+    "namePlaceholder": "e.g. Corn tortilla",
+    "brand": "Brand (optional)",
+    "brandPlaceholder": "e.g. Maseca",
+    "servingSize": "Serving size",
+    "unit": "Unit",
+    "nutrition": "Nutrition info",
+    "perServing": "per serving",
+    "submit": "Save food",
+    "cancel": "Cancel",
+    "success": "Food added successfully!",
+    "badge": "👥",
+    "fields": {
+      "calories": "Calories",
+      "protein": "Protein",
+      "carbs": "Carbohydrates",
+      "fat": "Fat",
+      "fiber": "Fiber",
+      "sugar": "Sugar",
+      "sodium": "Sodium",
+      "cholesterol": "Cholesterol"
+    },
+    "units": {
+      "g": "g (grams)",
+      "ml": "ml (milliliters)",
+      "oz": "oz (ounces)",
+      "cup": "cup",
+      "piece": "piece"
+    }
   }
 }

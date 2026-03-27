@@ -6,6 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { searchFoods, FoodItem, NutritionFacts } from '@/lib/usda'
 import { getPortionsForFood, PortionUnit } from '@/lib/portions'
 import { useI18n } from '@/components/I18nProvider'
+import { searchCommunityFoods, CommunityFood } from '@/lib/communityFoods'
+import { AddFoodModal } from '@/components/AddFoodModal'
+import { useAuth } from '@/components/AuthProvider'
 
 const schema = z.object({
   query: z.string().min(2, 'Escribe al menos 2 caracteres'),
@@ -15,18 +18,23 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+type AnyFood = (FoodItem & { source?: undefined }) | CommunityFood
+
 interface Props {
   onAdd: (meal: { foodName: string; calories: number; quantity: number; unit: string; nutrition: NutritionFacts }) => void
 }
 
 export function FoodSearch({ onAdd }: Props) {
-  const [results, setResults] = useState<FoodItem[]>([])
-  const [selected, setSelected] = useState<FoodItem | null>(null)
+  const [results, setResults] = useState<AnyFood[]>([])
+  const [selected, setSelected] = useState<AnyFood | null>(null)
   const [searching, setSearching] = useState(false)
   const [activePortion, setActivePortion] = useState<PortionUnit | null>(null)
   const [portions, setPortions] = useState<PortionUnit[]>([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { locale, t } = useI18n()
+  const { user } = useAuth()
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,8 +47,11 @@ export function FoodSearch({ onAdd }: Props) {
   async function doSearch(q: string) {
     if (q.length < 2) return
     setSearching(true)
-    const foods = await searchFoods(q)
-    setResults(foods)
+    const [usdaFoods, communityFoods] = await Promise.all([
+      searchFoods(q),
+      searchCommunityFoods(q),
+    ])
+    setResults([...communityFoods, ...usdaFoods])
     setSearching(false)
   }
 
@@ -66,7 +77,7 @@ export function FoodSearch({ onAdd }: Props) {
     }
   }, [])
 
-  function handleSelectFood(food: FoodItem) {
+  function handleSelectFood(food: AnyFood) {
     setSelected(food)
     setResults([])
     const detected = getPortionsForFood(food.description)
@@ -82,7 +93,6 @@ export function FoodSearch({ onAdd }: Props) {
 
   function handleQuantityChange(e: React.ChangeEvent<HTMLInputElement>) {
     register('quantity').onChange(e)
-    // Deselect active portion if quantity changed manually
     if (activePortion && Number(e.target.value) !== activePortion.grams) {
       setActivePortion(null)
     }
@@ -114,36 +124,72 @@ export function FoodSearch({ onAdd }: Props) {
     setValue('query', '')
   }
 
+  function handleFoodAdded(food: CommunityFood) {
+    setShowAddModal(false)
+    setHighlightedId(food.id)
+    setResults(prev => [food, ...prev])
+    // Auto-select the newly added food
+    handleSelectFood(food)
+    setTimeout(() => setHighlightedId(null), 3000)
+  }
+
   return (
     <div className="space-y-4">
+      {showAddModal && user && (
+        <AddFoodModal
+          onAdd={handleFoodAdded}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
+
       <div>
-        <div className="relative">
-          <input
-            {...register('query')}
-            placeholder="Buscar alimento... ej: manzana, pollo, arroz"
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 pr-10"
-            onChange={handleQueryChange}
-          />
-          {searching && (
-            <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+        <div className="flex gap-2 mb-2">
+          <div className="relative flex-1">
+            <input
+              {...register('query')}
+              placeholder="Buscar alimento... ej: manzana, pollo, arroz"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 pr-10"
+              onChange={handleQueryChange}
+            />
+            {searching && (
+              <div className="absolute right-3 top-3.5 w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+          {user && (
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="flex-shrink-0 border border-emerald-600 text-emerald-400 hover:bg-emerald-900/30 rounded-xl px-3 py-2 text-sm font-medium transition-colors"
+              title={t('communityFood.addFood')}
+            >
+              + {t('communityFood.addFood')}
+            </button>
           )}
         </div>
         {errors.query && <p className="text-red-400 text-xs mt-1">{errors.query.message}</p>}
 
         {results.length > 0 && !selected && (
           <ul role="listbox" className="mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
-            {results.map(food => (
-              <li key={food.fdcId} role="option" aria-selected={false}>
-                <button
-                  type="button"
-                  onClick={() => handleSelectFood(food)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-0"
-                >
-                  <p className="text-white text-sm font-medium truncate">{food.description}</p>
-                  <p className="text-gray-400 text-xs">{food.brandOwner ? `${food.brandOwner} · ` : ''}{food.nutrition.calories} kcal/100g</p>
-                </button>
-              </li>
-            ))}
+            {results.map(food => {
+              const isCommunity = food.source === 'community'
+              const foodId = isCommunity ? (food as CommunityFood).id : String((food as FoodItem).fdcId)
+              const isHighlighted = isCommunity && highlightedId === (food as CommunityFood).id
+              return (
+                <li key={foodId} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectFood(food)}
+                    className={`w-full text-left px-4 py-2.5 hover:bg-gray-700 transition-colors border-b border-gray-700 last:border-0 ${isHighlighted ? 'bg-emerald-900/30' : ''}`}
+                  >
+                    <p className="text-white text-sm font-medium truncate">
+                      {isCommunity && <span className="mr-1">{t('communityFood.badge')}</span>}
+                      {food.description}
+                    </p>
+                    <p className="text-gray-400 text-xs">{food.brandOwner ? `${food.brandOwner} · ` : ''}{food.nutrition.calories} kcal/100g</p>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
@@ -152,7 +198,10 @@ export function FoodSearch({ onAdd }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="bg-gray-800 rounded-xl p-4 border border-emerald-800 space-y-3">
           <div className="flex items-start justify-between">
             <div>
-              <p className="font-semibold text-white text-sm">{selected.description}</p>
+              <p className="font-semibold text-white text-sm">
+                {selected.source === 'community' && <span className="mr-1">{t('communityFood.badge')}</span>}
+                {selected.description}
+              </p>
               <p className="text-gray-400 text-xs">{selected.nutrition.calories} kcal/100g</p>
             </div>
             <button type="button" onClick={() => { setSelected(null); setPortions([]); setActivePortion(null) }} className="text-gray-500 hover:text-white">×</button>

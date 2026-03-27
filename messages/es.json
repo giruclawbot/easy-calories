@@ -241,5 +241,42 @@
     "noEntries": "Sin suplementos registrados hoy",
     "perServing": "por porción",
     "brand": "Marca"
+  },
+  "communityFood": {
+    "addFood": "Agregar alimento",
+    "addNewFood": "Agregar alimento nuevo",
+    "modalTitle": "Agregar alimento personalizado",
+    "pageTitle": "Agregar alimento",
+    "pageDescription": "Los alimentos que agregues estarán disponibles para todos los usuarios. ¡Ayuda a enriquecer la base de datos!",
+    "sectionBasic": "Información básica",
+    "name": "Nombre del alimento",
+    "namePlaceholder": "Ej: Tortilla de maíz",
+    "brand": "Marca (opcional)",
+    "brandPlaceholder": "Ej: Maseca",
+    "servingSize": "Tamaño de porción",
+    "unit": "Unidad",
+    "nutrition": "Información nutricional",
+    "perServing": "por porción",
+    "submit": "Guardar alimento",
+    "cancel": "Cancelar",
+    "success": "¡Alimento agregado exitosamente!",
+    "badge": "👥",
+    "fields": {
+      "calories": "Calorías",
+      "protein": "Proteína",
+      "carbs": "Carbohidratos",
+      "fat": "Grasa",
+      "fiber": "Fibra",
+      "sugar": "Azúcar",
+      "sodium": "Sodio",
+      "cholesterol": "Colesterol"
+    },
+    "units": {
+      "g": "g (gramos)",
+      "ml": "ml (mililitros)",
+      "oz": "oz (onzas)",
+      "cup": "taza",
+      "piece": "pieza"
+    }
   }
 }
