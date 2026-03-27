@@ -1,7 +1,7 @@
 {
   "name": "easy-calories",
 
-  "version": "1.18.4",
+  "version": "1.18.5",
   "private": true,
   "scripts": {
     "dev": "next dev",

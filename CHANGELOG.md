@@ -12,6 +12,16 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.5] - 2026-03-27
+
+### Fixed
+- Recipes list: Firestore `failed-precondition` error — missing composite index for `createdBy + createdAt` query
+  - Added `firestore.indexes.json` with the required composite index
+  - Registered indexes file in `firebase.json`
+  - Deployed with `firebase deploy --only firestore`
+
+---
+
 ## [1.18.4] - 2026-03-27
 
 ### Fixed
