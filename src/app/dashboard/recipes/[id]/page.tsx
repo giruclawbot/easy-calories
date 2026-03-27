@@ -1,10 +1,11 @@
 import RecipeDetailClient from './RecipeDetailClient'
 
+// Static export requires at least one param — the real ID is read
+// client-side via useParams() in RecipeDetailClient
 export async function generateStaticParams() {
-  return [{ id: 'sample' }]
+  return [{ id: 'placeholder' }]
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  return <RecipeDetailClient id={id} />
+export default function Page() {
+  return <RecipeDetailClient />
 }

@@ -1,12 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
 import { useI18n } from '@/components/I18nProvider'
 import { getRecipe, deleteRecipe, updateRecipe, Recipe } from '@/lib/recipes'
 import { addMeal, trackFoodUsage } from '@/lib/firestore'
+import { logger } from '@/lib/logger'
 import type { Meal } from '@/lib/firestore'
 
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
@@ -19,10 +19,13 @@ const MEAL_TYPES: { type: MealType; emoji: string; label: string }[] = [
   { type: 'snack', emoji: '🍎', label: 'snack' },
 ]
 
-export default function RecipeDetailClient({ id }: { id: string }) {
+export default function RecipeDetailClient() {
   const { user } = useAuth()
   const { t } = useI18n()
   const router = useRouter()
+  // Read the real ID from URL params client-side (required for static export)
+  const params = useParams()
+  const id = params?.id as string | undefined
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,13 +46,27 @@ export default function RecipeDetailClient({ id }: { id: string }) {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
+    if (!id) {
+      logger.warn('recipe-detail', 'load', 'No recipe ID in params')
+      setLoading(false)
+      return
+    }
+    logger.info('recipe-detail', 'load', `Loading recipe ${id}`)
     getRecipe(id).then(r => {
+      if (r) {
+        logger.info('recipe-detail', 'load', `Recipe loaded: "${r.name}"`)
+      } else {
+        logger.warn('recipe-detail', 'load', `Recipe not found: ${id}`)
+      }
       setRecipe(r)
       if (r) {
         setEditName(r.name)
         setEditDesc(r.description || '')
         setEditServings(r.servings)
       }
+      setLoading(false)
+    }).catch(e => {
+      logger.error('recipe-detail', 'load', 'Failed to load recipe', e)
       setLoading(false)
     })
   }, [id])
@@ -120,11 +137,26 @@ export default function RecipeDetailClient({ id }: { id: string }) {
   }
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-500 animate-pulse">{t('dashboard.loading')}</div>
+    return (
+      <div className="flex items-center justify-center py-16 gap-2 text-gray-500">
+        <div className="w-5 h-5 border-2 border-gray-600 border-t-emerald-500 rounded-full animate-spin" />
+        <span>{t('dashboard.loading')}</span>
+      </div>
+    )
   }
 
   if (!recipe) {
-    return <div className="text-center py-12 text-gray-500">Receta no encontrada</div>
+    return (
+      <div className="text-center py-12 space-y-3">
+        <p className="text-gray-400">Receta no encontrada</p>
+        <button
+          onClick={() => router.push('/dashboard/recipes')}
+          className="text-emerald-400 hover:text-emerald-300 text-sm underline"
+        >
+          ← Volver a Recetas
+        </button>
+      </div>
+    )
   }
 
   const isOwner = user?.uid === recipe.createdBy

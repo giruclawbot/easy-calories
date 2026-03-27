@@ -12,6 +12,19 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.6] - 2026-03-27
+
+### Fixed
+- Recipe detail: clicking a recipe navigated to dashboard instead of showing the recipe
+  - Root cause: static export passes `params` from server at build time (always `"placeholder"`);
+    real ID must be read client-side via `useParams()`
+  - `RecipeDetailClient` now reads `id` from `useParams()` directly instead of receiving it as a prop
+  - `page.tsx` no longer passes `id` prop — just renders `<RecipeDetailClient />`
+- Recipe detail: "not found" state now shows a helpful back button instead of blank text
+- Recipe detail: load errors are now caught and logged via `logger.error`
+
+---
+
 ## [1.18.5] - 2026-03-27
 
 ### Fixed
