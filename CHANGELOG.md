@@ -12,6 +12,17 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.7] - 2026-03-27
+
+### Fixed
+- Recipe detail navigation still redirecting unexpectedly on some static-export routes
+  - Added stable static route `/dashboard/recipes/view?id=<recipeId>`
+  - Recipe list now opens details via query-param route (`/recipes/view?id=...`) instead of dynamic segment
+  - Recipe detail loader now reads `id` from `useSearchParams()` first, then falls back to `useParams()`
+  - This avoids static-export dynamic-segment hydration mismatch issues
+
+---
+
 ## [1.18.6] - 2026-03-27
 
 ### Fixed

@@ -65,7 +65,7 @@ export default function RecipesPage() {
     const isOwn = user?.uid === recipe.createdBy
     return (
       <button
-        onClick={() => router.push(`/dashboard/recipes/${recipe.id}`)}
+        onClick={() => router.push(`/dashboard/recipes/view?id=${encodeURIComponent(recipe.id)}`)}
         className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-left hover:border-gray-500 transition-colors"
       >
         <div className="flex items-start justify-between gap-2">

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { useAuth } from '@/components/AuthProvider'
 import { useI18n } from '@/components/I18nProvider'
@@ -23,9 +23,11 @@ export default function RecipeDetailClient() {
   const { user } = useAuth()
   const { t } = useI18n()
   const router = useRouter()
-  // Read the real ID from URL params client-side (required for static export)
   const params = useParams()
-  const id = params?.id as string | undefined
+  const searchParams = useSearchParams()
+  // Prefer query param (?id=...) to support static export routes like /recipes/view?id=...
+  // Fallback to dynamic segment /recipes/[id] for local/dev compatibility
+  const id = searchParams.get('id') || (params?.id as string | undefined)
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(true)
