@@ -51,17 +51,21 @@ export default function NewRecipePage() {
     setSearching(true)
     setHasSearched(true)
     try {
-      const [usda, community] = await Promise.all([
+      const [usda, community] = await Promise.allSettled([
         searchFoods(q),
         searchCommunityFoods(q),
       ])
-      const communityAsFoodItems: FoodItem[] = community.map(cf => ({
-        fdcId: -1,  // marker for community, unique key handled via index+description
+      const usdaResults = usda.status === 'fulfilled' ? usda.value : []
+      const communityResults = community.status === 'fulfilled' ? community.value : []
+      const communityAsFoodItems: FoodItem[] = communityResults.map(cf => ({
+        fdcId: -1,
         description: cf.name,
         brandOwner: cf.brand,
         nutrition: cf.nutrition,
       }))
-      setFoodResults([...communityAsFoodItems, ...usda].slice(0, 15))
+      setFoodResults([...communityAsFoodItems, ...usdaResults].slice(0, 15))
+    } catch {
+      setFoodResults([])
     } finally {
       setSearching(false)
     }
