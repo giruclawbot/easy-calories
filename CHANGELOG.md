@@ -12,6 +12,20 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.2] - 2026-03-27
+
+### Fixed
+- Recipe save: `createRecipe` now strips `undefined` fields before writing to Firestore (Firestore rejects `undefined` in `setDoc`)
+- Recipe save: explicit error message now shows the actual error instead of generic "Error al guardar"
+- Recipe save: disabled save button when no ingredients added (prevents empty recipe save attempts)
+
+### Added
+- Recipe ingredient search: quick portion buttons per ingredient (reuses `getPortionsForFood` logic from food search)
+- Recipe ingredient search: barcode scanner button — scan a product directly while building a recipe
+- Recipe ingredient search: first common portion is used as default quantity when adding an ingredient
+
+---
+
 ## [1.18.1] - 2026-03-27
 
 ### Fixed

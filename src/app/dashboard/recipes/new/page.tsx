@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useI18n } from '@/components/I18nProvider'
 import { createRecipe, scaleNutrition, sumNutrition, divideNutrition, RecipeIngredient } from '@/lib/recipes'
-import { searchFoods, FoodItem, NutritionFacts } from '@/lib/usda'
+import { searchFoods, FoodItem, NutritionFacts, getFoodByBarcode } from '@/lib/usda'
 import { searchCommunityFoods } from '@/lib/communityFoods'
+import { getPortionsForFood, PortionUnit } from '@/lib/portions'
+import { BarcodeScanner } from '@/components/BarcodeScanner'
 
 const SERVING_OPTIONS = [1, 2, 3, 4, 6, 8, 12]
-const UNIT_OPTIONS = ['g', 'oz', 'ml', 'portion']
+const UNIT_OPTIONS = ['g', 'oz', 'ml', 'porción']
 
 const EMPTY_NUTRITION: NutritionFacts = {
   calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0, cholesterol: 0,
@@ -17,15 +19,16 @@ const EMPTY_NUTRITION: NutritionFacts = {
 interface IngredientEntry {
   id: string
   foodName: string
-  baseNutrition: NutritionFacts  // per 100g/unit
+  baseNutrition: NutritionFacts  // per 100g
   quantity: number
   unit: string
   scaledNutrition: NutritionFacts
+  portions: PortionUnit[]
 }
 
 export default function NewRecipePage() {
   const { user } = useAuth()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const router = useRouter()
 
   const [name, setName] = useState('')
@@ -37,11 +40,11 @@ export default function NewRecipePage() {
   const [foodResults, setFoodResults] = useState<FoodItem[]>([])
   const [searching, setSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Cleanup debounce on unmount
   useEffect(() => {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [])
@@ -51,12 +54,12 @@ export default function NewRecipePage() {
     setSearching(true)
     setHasSearched(true)
     try {
-      const [usda, community] = await Promise.allSettled([
+      const [usdaResult, communityResult] = await Promise.allSettled([
         searchFoods(q),
         searchCommunityFoods(q),
       ])
-      const usdaResults = usda.status === 'fulfilled' ? usda.value : []
-      const communityResults = community.status === 'fulfilled' ? community.value : []
+      const usdaResults = usdaResult.status === 'fulfilled' ? usdaResult.value : []
+      const communityResults = communityResult.status === 'fulfilled' ? communityResult.value : []
       const communityAsFoodItems: FoodItem[] = communityResults.map(cf => ({
         fdcId: -1,
         description: cf.name,
@@ -81,24 +84,41 @@ export default function NewRecipePage() {
     debounceRef.current = setTimeout(() => doSearch(val), 400)
   }
 
-  function handleAddIngredient(food: FoodItem) {
+  function addFoodToIngredients(food: FoodItem) {
+    const portions = getPortionsForFood(food.description)
+    // If there are common portions, use the first one as default quantity
+    const defaultQty = portions.length > 0 ? portions[0].grams : 100
     const entry: IngredientEntry = {
       id: crypto.randomUUID(),
       foodName: food.description,
       baseNutrition: food.nutrition,
-      quantity: 100,
+      quantity: defaultQty,
       unit: 'g',
-      scaledNutrition: scaleNutrition(food.nutrition, 100),
+      scaledNutrition: scaleNutrition(food.nutrition, defaultQty),
+      portions,
     }
     setIngredients(prev => [...prev, entry])
     setFoodResults([])
     setFoodQuery('')
+    setHasSearched(false)
+  }
+
+  function handleBarcodeFound(food: FoodItem) {
+    setShowScanner(false)
+    addFoodToIngredients(food)
   }
 
   function handleQtyChange(id: string, qty: number) {
     setIngredients(prev => prev.map(ing => {
       if (ing.id !== id) return ing
       return { ...ing, quantity: qty, scaledNutrition: scaleNutrition(ing.baseNutrition, qty) }
+    }))
+  }
+
+  function handlePortionClick(id: string, grams: number) {
+    setIngredients(prev => prev.map(ing => {
+      if (ing.id !== id) return ing
+      return { ...ing, quantity: grams, unit: 'g', scaledNutrition: scaleNutrition(ing.baseNutrition, grams) }
     }))
   }
 
@@ -118,7 +138,9 @@ export default function NewRecipePage() {
   async function handleSave() {
     if (!user) return
     if (!name.trim()) { setError('El nombre es requerido'); return }
+    if (ingredients.length === 0) { setError('Agrega al menos un ingrediente'); return }
     setSaving(true)
+    setError(null)
     try {
       const recipeIngredients: RecipeIngredient[] = ingredients.map(ing => ({
         foodName: ing.foodName,
@@ -126,23 +148,30 @@ export default function NewRecipePage() {
         unit: ing.unit,
         nutrition: ing.scaledNutrition,
       }))
-      await createRecipe(user.uid, user.displayName, {
+
+      // Build the recipe data — strip undefined fields to avoid Firestore rejection
+      const recipeData: Parameters<typeof createRecipe>[2] = {
         name: name.trim(),
-        description: description.trim() || undefined,
         servings,
         ingredients: recipeIngredients,
         nutrition: perServing,
         totalNutrition,
-      })
+      }
+      // Only include description if non-empty
+      const trimmedDesc = description.trim()
+      if (trimmedDesc) recipeData.description = trimmedDesc
+
+      await createRecipe(user.uid, user.displayName, recipeData)
       router.push('/dashboard/recipes')
-    } catch {
-      setError('Error al guardar')
+    } catch (e) {
+      setError(`Error al guardar: ${String(e)}`)
       setSaving(false)
     }
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-10">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()} className="text-gray-400 hover:text-white">{t('recipes.back')}</button>
         <h1 className="text-2xl font-bold text-white">{t('recipes.new')}</h1>
@@ -154,7 +183,7 @@ export default function NewRecipePage() {
 
       {/* Name */}
       <div>
-        <label className="text-sm text-gray-400 block mb-1">{t('recipes.name')}</label>
+        <label className="text-sm text-gray-400 block mb-1">{t('recipes.name')} *</label>
         <input
           type="text"
           value={name}
@@ -196,12 +225,12 @@ export default function NewRecipePage() {
         </div>
       </div>
 
-      {/* Ingredients */}
+      {/* Ingredients section */}
       <div>
         <h2 className="text-sm font-semibold text-gray-400 mb-2">{t('recipes.ingredients')}</h2>
 
-        {/* Search */}
-        <div className="relative mb-3">
+        {/* Search input */}
+        <div className="relative mb-2">
           <input
             type="text"
             value={foodQuery}
@@ -215,13 +244,21 @@ export default function NewRecipePage() {
           )}
         </div>
 
-        {/* Food results */}
+        {/* Barcode scanner button */}
+        <button
+          onClick={() => setShowScanner(!showScanner)}
+          className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 font-medium py-2.5 rounded-xl transition-colors text-sm mb-3"
+        >
+          📷 {showScanner ? t('food.stopScan') : t('food.scanBarcode')}
+        </button>
+
+        {/* Food search results */}
         {foodResults.length > 0 && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden mb-3">
             {foodResults.map((food, idx) => (
               <button
                 key={`${food.fdcId}-${idx}`}
-                onClick={() => handleAddIngredient(food)}
+                onClick={() => addFoodToIngredients(food)}
                 className="w-full px-4 py-2.5 text-left hover:bg-gray-700 border-b border-gray-700 last:border-0 transition-colors"
               >
                 <p className="text-white text-sm truncate">{food.description}</p>
@@ -236,35 +273,63 @@ export default function NewRecipePage() {
           <p className="text-gray-500 text-sm mb-3">{t('recipes.noIngredientSearch')}</p>
         )}
 
-        {/* Added ingredients */}
+        {/* Added ingredients list */}
         <div className="space-y-2">
           {ingredients.map(ing => (
             <div key={ing.id} className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-3">
+              {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-2">
                 <p className="text-white text-sm font-medium flex-1 truncate">{ing.foodName}</p>
                 <button
                   onClick={() => handleRemove(ing.id)}
                   className="text-gray-500 hover:text-red-400 text-lg leading-none shrink-0"
                 >
-                  {t('recipes.removeIngredient')}
+                  ×
                 </button>
               </div>
+
+              {/* Quick portion buttons */}
+              {ing.portions.length > 0 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 mb-2 scrollbar-hide">
+                  {ing.portions.map(portion => {
+                    const label = locale === 'en' ? portion.labelEn : portion.labelEs
+                    const isActive = ing.quantity === portion.grams && ing.unit === 'g'
+                    return (
+                      <button
+                        key={`${portion.labelEn}:${portion.grams}`}
+                        onClick={() => handlePortionClick(ing.id, portion.grams)}
+                        className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border ${
+                          isActive
+                            ? 'bg-emerald-900 border-emerald-400 text-emerald-300'
+                            : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-emerald-600'
+                        }`}
+                      >
+                        {portion.icon && <span>{portion.icon}</span>}
+                        <span>{label}</span>
+                        <span className="text-gray-400">· {portion.grams}g</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Qty + unit + calories */}
               <div className="flex gap-2 items-center">
                 <input
                   type="number"
                   value={ing.quantity}
                   min={1}
                   onChange={e => handleQtyChange(ing.id, Number(e.target.value))}
-                  className="w-20 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-emerald-600"
+                  className="w-20 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm text-center focus:outline-none focus:border-emerald-600"
                 />
                 <select
                   value={ing.unit}
                   onChange={e => handleUnitChange(ing.id, e.target.value)}
-                  className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none"
+                  className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none"
                 >
                   {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
-                <span className="text-emerald-400 text-sm ml-auto">
+                <span className="text-emerald-400 text-sm ml-auto font-medium">
                   {Math.round(ing.scaledNutrition.calories)} kcal
                 </span>
               </div>
@@ -276,15 +341,15 @@ export default function NewRecipePage() {
       {/* Nutrition preview */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-4">
         <h2 className="text-sm font-semibold text-gray-400 mb-3">
-          {ingredients.length === 0 ? t('recipes.noIngredients') : t('recipes.perServing')}
+          {ingredients.length === 0 ? t('recipes.noIngredients') : `${t('recipes.perServing')} (÷${servings})`}
         </h2>
         {ingredients.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: 'Kcal', value: Math.round(perServing.calories), color: 'text-emerald-400' },
-              { label: 'Proteína', value: `${Math.round(perServing.protein)}g`, color: 'text-blue-400' },
-              { label: 'Carbs', value: `${Math.round(perServing.carbs)}g`, color: 'text-yellow-400' },
-              { label: 'Grasa', value: `${Math.round(perServing.fat)}g`, color: 'text-orange-400' },
+              { label: 'Proteína', value: `${Math.round(perServing.protein * 10) / 10}g`, color: 'text-blue-400' },
+              { label: 'Carbs', value: `${Math.round(perServing.carbs * 10) / 10}g`, color: 'text-yellow-400' },
+              { label: 'Grasa', value: `${Math.round(perServing.fat * 10) / 10}g`, color: 'text-orange-400' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-gray-900 rounded-xl p-3 text-center">
                 <p className={`text-xl font-bold ${color}`}>{value}</p>
@@ -295,13 +360,22 @@ export default function NewRecipePage() {
         )}
       </div>
 
+      {/* Save button */}
       <button
         onClick={handleSave}
-        disabled={saving || !name.trim()}
+        disabled={saving || !name.trim() || ingredients.length === 0}
         className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
       >
         {saving ? '...' : t('recipes.save')}
       </button>
+
+      {/* Barcode scanner modal */}
+      {showScanner && (
+        <BarcodeScanner
+          onFound={handleBarcodeFound}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   )
 }

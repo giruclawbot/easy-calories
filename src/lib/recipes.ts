@@ -86,21 +86,24 @@ export async function createRecipe(
   const id = crypto.randomUUID()
   const searchTerms = buildSearchTerms(data.name, data.description)
 
-  const recipe: Omit<Recipe, 'id'> & { id: string } = {
+  const recipe: Record<string, unknown> = {
     ...data,
     id,
     createdBy: uid,
-    createdByName: displayName || undefined,
     searchTerms,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
+  // Only set optional fields if they have a value — Firestore rejects undefined
+  if (displayName) recipe.createdByName = displayName
+  // Remove any remaining undefined values recursively at top level
+  Object.keys(recipe).forEach(k => recipe[k] === undefined && delete recipe[k])
 
   if (db) {
     await setDoc(doc(db, 'recipes', id), recipe)
   }
 
-  return { ...recipe, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  return { ...recipe, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Recipe
 }
 
 export async function updateRecipe(
