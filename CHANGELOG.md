@@ -8,6 +8,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_(Add new changes here during development)_
+
+---
+
+## [1.18.1] - 2026-03-27
+
+### Fixed
+- Recipe ingredient search: replaced `Promise.all` with `Promise.allSettled` — USDA results now show even if Firestore community foods query fails silently
+- Recipe ingredient search: fixed duplicate React keys when community foods (fdcId=0) mixed with USDA results — uses `${fdcId}-${index}` as key
+- Recipe ingredient search: added `hasSearched` flag to prevent premature "no results" message before first search completes
+- Recipe ingredient search: switched to auto-debounce (400ms) instead of manual search button, consistent with FoodSearch behavior
+
+---
+
 ## [1.18.0] - 2026-03-27
 
 ### Added
