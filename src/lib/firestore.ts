@@ -4,6 +4,7 @@ import {
   collection, query, where, orderBy, limit as firestoreLimit, getDocs
 } from 'firebase/firestore'
 import type { NutritionFacts } from './usda'
+import { logger } from './logger'
 
 export interface Meal {
   id: string
@@ -32,22 +33,29 @@ export async function getDayData(uid: string, date: string): Promise<DayData | n
 
 export async function addMeal(uid: string, date: string, meal: Meal): Promise<void> {
   const db = getFirebaseDb()
-  if (!db) return
+  if (!db) { logger.warn('firestore', 'addMeal', 'db is null'); return }
+  logger.debug('firestore', 'addMeal', `Adding meal "${meal.foodName}"`, { uid, date, calories: meal.calories })
   const ref = doc(db, 'users', uid, 'days', date)
-  const existing = await getDoc(ref)
-  if (existing.exists()) {
-    const data = existing.data() as DayData
-    await updateDoc(ref, {
-      meals: arrayUnion(meal),
-      totalCalories: (data.totalCalories || 0) + meal.calories,
-      updatedAt: serverTimestamp(),
-    })
-  } else {
-    await setDoc(ref, {
-      totalCalories: meal.calories,
-      meals: [meal],
-      updatedAt: serverTimestamp(),
-    })
+  try {
+    const existing = await getDoc(ref)
+    if (existing.exists()) {
+      const data = existing.data() as DayData
+      await updateDoc(ref, {
+        meals: arrayUnion(meal),
+        totalCalories: (data.totalCalories || 0) + meal.calories,
+        updatedAt: serverTimestamp(),
+      })
+    } else {
+      await setDoc(ref, {
+        totalCalories: meal.calories,
+        meals: [meal],
+        updatedAt: serverTimestamp(),
+      })
+    }
+    logger.debug('firestore', 'addMeal', 'Meal added successfully')
+  } catch (e) {
+    logger.error('firestore', 'addMeal', 'Failed to add meal', e)
+    throw e
   }
 }
 
@@ -132,21 +140,30 @@ export interface UserProfile {
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const db = getFirebaseDb()
-  if (!db) return null
+  if (!db) { logger.warn('firestore', 'getUserProfile', 'db is null'); return null }
   try {
     const ref = doc(db, 'users', uid, 'settings', 'profile')
     const snap = await getDoc(ref)
+    logger.debug('firestore', 'getUserProfile', snap.exists() ? 'Profile loaded' : 'No profile found', { uid })
     return snap.exists() ? (snap.data() as UserProfile) : null
-  } catch {
+  } catch (e) {
+    logger.error('firestore', 'getUserProfile', 'Failed to load profile', e)
     return null
   }
 }
 
 export async function saveUserProfile(uid: string, profile: Partial<UserProfile>): Promise<void> {
   const db = getFirebaseDb()
-  if (!db) return
-  const ref = doc(db, 'users', uid, 'settings', 'profile')
-  await setDoc(ref, { ...profile, updatedAt: serverTimestamp() }, { merge: true })
+  if (!db) { logger.warn('firestore', 'saveUserProfile', 'db is null'); return }
+  logger.debug('firestore', 'saveUserProfile', 'Saving profile', { uid })
+  try {
+    const ref = doc(db, 'users', uid, 'settings', 'profile')
+    await setDoc(ref, { ...profile, updatedAt: serverTimestamp() }, { merge: true })
+    logger.debug('firestore', 'saveUserProfile', 'Profile saved successfully')
+  } catch (e) {
+    logger.error('firestore', 'saveUserProfile', 'Failed to save profile', e)
+    throw e
+  }
 }
 
 // Keep backward compat

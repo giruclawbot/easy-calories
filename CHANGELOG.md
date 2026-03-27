@@ -12,6 +12,21 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.3] - 2026-03-27
+
+### Fixed
+- Firestore rules for `/recipes` collection were never deployed to production — only `hosting` was being deployed. Fixed by running `firebase deploy --only firestore:rules`
+
+### Added
+- Centralized logger (`src/lib/logger.ts`) — structured logging with module/function context
+  - Dev: colored console output with full context
+  - Prod: minimal console + errors/warnings sent to Firebase Analytics as `app_error`/`app_warning` events
+  - `withLog()` helper to wrap async functions with automatic error logging
+- Logging added to `src/lib/recipes.ts`: createRecipe, updateRecipe, deleteRecipe
+- Logging added to `src/lib/firestore.ts`: addMeal, getUserProfile, saveUserProfile
+
+---
+
 ## [1.18.2] - 2026-03-27
 
 ### Fixed

@@ -5,6 +5,7 @@ import {
   where, orderBy, limit as firestoreLimit,
 } from 'firebase/firestore'
 import type { NutritionFacts } from './usda'
+import { logger } from './logger'
 
 export interface RecipeIngredient {
   foodName: string
@@ -86,6 +87,8 @@ export async function createRecipe(
   const id = crypto.randomUUID()
   const searchTerms = buildSearchTerms(data.name, data.description)
 
+  logger.info('recipes', 'createRecipe', `Creating recipe "${data.name}" for uid=${uid}`, { id, searchTerms })
+
   const recipe: Record<string, unknown> = {
     ...data,
     id,
@@ -94,13 +97,19 @@ export async function createRecipe(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
-  // Only set optional fields if they have a value — Firestore rejects undefined
   if (displayName) recipe.createdByName = displayName
-  // Remove any remaining undefined values recursively at top level
   Object.keys(recipe).forEach(k => recipe[k] === undefined && delete recipe[k])
 
   if (db) {
-    await setDoc(doc(db, 'recipes', id), recipe)
+    try {
+      await setDoc(doc(db, 'recipes', id), recipe)
+      logger.info('recipes', 'createRecipe', `Recipe saved successfully`, { id })
+    } catch (e) {
+      logger.error('recipes', 'createRecipe', 'Firestore setDoc failed', e)
+      throw e
+    }
+  } else {
+    logger.warn('recipes', 'createRecipe', 'Firestore db is null — recipe not persisted')
   }
 
   return { ...recipe, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Recipe
@@ -112,37 +121,50 @@ export async function updateRecipe(
   data: Partial<Pick<Recipe, 'name' | 'description' | 'servings'>>
 ): Promise<void> {
   const db = getFirebaseDb()
-  if (!db) return
+  if (!db) { logger.warn('recipes', 'updateRecipe', 'db is null'); return }
 
+  logger.info('recipes', 'updateRecipe', `Updating recipe ${recipeId}`, data)
   const ref = doc(db, 'recipes', recipeId)
   const snap = await getDoc(ref)
-  if (!snap.exists()) throw new Error('Recipe not found')
+  if (!snap.exists()) { logger.error('recipes', 'updateRecipe', 'Recipe not found', { recipeId }); throw new Error('Recipe not found') }
   const existing = snap.data() as Recipe
-  if (existing.createdBy !== uid) throw new Error('Not authorized')
+  if (existing.createdBy !== uid) { logger.error('recipes', 'updateRecipe', 'Not authorized', { uid, createdBy: existing.createdBy }); throw new Error('Not authorized') }
 
   const updates: Record<string, unknown> = { ...data, updatedAt: serverTimestamp() }
   if (data.name) {
     updates.searchTerms = buildSearchTerms(data.name, data.description ?? existing.description)
   }
-  // Recompute per-serving nutrition if servings changed
   if (data.servings && data.servings !== existing.servings) {
     updates.nutrition = divideNutrition(existing.totalNutrition, data.servings)
   }
 
-  await updateDoc(ref, updates)
+  try {
+    await updateDoc(ref, updates)
+    logger.info('recipes', 'updateRecipe', 'Updated successfully', { recipeId })
+  } catch (e) {
+    logger.error('recipes', 'updateRecipe', 'updateDoc failed', e)
+    throw e
+  }
 }
 
 export async function deleteRecipe(uid: string, recipeId: string): Promise<void> {
   const db = getFirebaseDb()
-  if (!db) return
+  if (!db) { logger.warn('recipes', 'deleteRecipe', 'db is null'); return }
 
+  logger.info('recipes', 'deleteRecipe', `Deleting recipe ${recipeId}`)
   const ref = doc(db, 'recipes', recipeId)
   const snap = await getDoc(ref)
-  if (!snap.exists()) throw new Error('Recipe not found')
+  if (!snap.exists()) { logger.error('recipes', 'deleteRecipe', 'Recipe not found', { recipeId }); throw new Error('Recipe not found') }
   const existing = snap.data() as Recipe
-  if (existing.createdBy !== uid) throw new Error('Not authorized')
+  if (existing.createdBy !== uid) { logger.error('recipes', 'deleteRecipe', 'Not authorized', { uid }); throw new Error('Not authorized') }
 
-  await deleteDoc(ref)
+  try {
+    await deleteDoc(ref)
+    logger.info('recipes', 'deleteRecipe', 'Deleted successfully', { recipeId })
+  } catch (e) {
+    logger.error('recipes', 'deleteRecipe', 'deleteDoc failed', e)
+    throw e
+  }
 }
 
 export async function searchRecipes(queryStr: string): Promise<Recipe[]> {
