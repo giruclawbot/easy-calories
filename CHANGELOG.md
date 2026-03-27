@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+_(Add new changes here during development)_
+
+---
+
+## [1.17.0] - 2026-03-27
+
+### Added
+- Community foods: dedicated page `/dashboard/add/custom-food` for adding new foods
+  - Full-page form with basic info (name, brand, serving size, unit) and nutrition fields (calories, protein, carbs, fat, fiber, sugar, sodium, cholesterol)
+  - Info banner explaining that submitted foods are visible to all users
+  - Success message after submission, auto-redirects back after 1.5s
+  - Button on Add Food page (`/dashboard/add`) navigating to the new page
+- i18n keys: `communityFood.addNewFood`, `communityFood.pageTitle`, `communityFood.pageDescription`, `communityFood.sectionBasic`, `communityFood.namePlaceholder`, `communityFood.brandPlaceholder`, `communityFood.perServing`, `communityFood.fields.*` (es + en)
+
+---
+
 ## [1.16.1] - 2026-03-26
 
 ### Changed

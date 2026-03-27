@@ -106,7 +106,16 @@ export default function AddFoodPage() {
       </button>
 
       <div>
-        <p className="text-sm text-gray-400 mb-3">O busca manualmente:</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm text-gray-400">O busca manualmente:</p>
+          <button
+            onClick={() => router.push('/dashboard/add/custom-food')}
+            className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 border border-emerald-800 hover:border-emerald-600 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            <span>👥</span>
+            <span>{t('communityFood.addNewFood')}</span>
+          </button>
+        </div>
         <FoodSearch onAdd={handleAdd} />
       </div>
 
