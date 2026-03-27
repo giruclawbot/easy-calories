@@ -42,6 +42,7 @@ export default function NewRecipePage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -162,7 +163,9 @@ export default function NewRecipePage() {
       if (trimmedDesc) recipeData.description = trimmedDesc
 
       await createRecipe(user.uid, user.displayName, recipeData)
-      router.push('/dashboard/recipes')
+      setSaveSuccess(true)
+      // Show success briefly then redirect
+      setTimeout(() => router.push('/dashboard/recipes'), 1200)
     } catch (e) {
       setError(`Error al guardar: ${String(e)}`)
       setSaving(false)
@@ -179,6 +182,13 @@ export default function NewRecipePage() {
 
       {error && (
         <div className="bg-red-900/30 border border-red-700 rounded-xl px-4 py-3 text-red-300 text-sm">{error}</div>
+      )}
+
+      {saveSuccess && (
+        <div className="bg-emerald-900/30 border border-emerald-700 rounded-xl px-4 py-3 flex items-center gap-2">
+          <span className="text-emerald-400">✓</span>
+          <span className="text-emerald-300 text-sm">{t('recipes.saved')}</span>
+        </div>
       )}
 
       {/* Name */}

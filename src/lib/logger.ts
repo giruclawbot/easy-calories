@@ -27,23 +27,25 @@ function formatMessage(level: LogLevel, module: string, fn: string, msg: string)
 }
 
 function sendToAnalytics(level: LogLevel, module: string, fn: string, msg: string, extra?: unknown) {
-  // Only send errors/warns to analytics in production
   if (typeof window === 'undefined') return
   try {
-    // Dynamic import to avoid SSR issues
-    import('firebase/analytics').then(({ getAnalytics, logEvent }) => {
-      import('./firebase').then(({ getFirebaseApp }) => {
-        const app = getFirebaseApp()
-        if (!app) return
-        const analytics = getAnalytics(app)
-        logEvent(analytics, level === 'error' ? 'app_error' : 'app_warning', {
-          module,
-          function: fn,
-          message: msg.slice(0, 100),
-          extra: extra ? String(extra).slice(0, 200) : undefined,
+    import('firebase/analytics').then(({ getAnalytics, logEvent, isSupported }) => {
+      isSupported().then(supported => {
+        if (!supported) return
+        // Re-use the already-initialized Firebase app via getApps()
+        import('firebase/app').then(({ getApps }) => {
+          const apps = getApps()
+          if (!apps.length) return
+          const analytics = getAnalytics(apps[0])
+          logEvent(analytics, level === 'error' ? 'app_error' : 'app_warning', {
+            module,
+            function: fn,
+            message: msg.slice(0, 100),
+            extra: extra ? String(extra).slice(0, 200) : undefined,
+          })
         })
-      })
-    }).catch(() => {/* analytics not available, no-op */})
+      }).catch(() => {/* analytics not supported */})
+    }).catch(() => {/* analytics not available */})
   } catch {
     // Never let logger crash the app
   }

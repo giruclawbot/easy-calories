@@ -12,6 +12,17 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.4] - 2026-03-27
+
+### Fixed
+- Build error: `logger.ts` was importing `getFirebaseApp` (private) — switched to `getApps()` from firebase/app
+- Recipes list: "Loading forever" when user auth hadn't resolved yet — now waits for `authLoading` to be false before setting `loadingMine=false`
+- Recipes list: no error state when Firestore query fails — now shows error message + retry button
+- New recipe: after save, navigated immediately without showing confirmation — now shows ✓ success banner for 1.2s before redirect
+- New recipe: catch block was swallowing the actual error — now shows full error message
+
+---
+
 ## [1.18.3] - 2026-03-27
 
 ### Fixed

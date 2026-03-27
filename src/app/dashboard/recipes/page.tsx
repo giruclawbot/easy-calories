@@ -4,25 +4,41 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useI18n } from '@/components/I18nProvider'
 import { getUserRecipes, searchRecipes, Recipe } from '@/lib/recipes'
+import { logger } from '@/lib/logger'
 
 export default function RecipesPage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { t } = useI18n()
   const router = useRouter()
   const [myRecipes, setMyRecipes] = useState<Recipe[]>([])
   const [searchResults, setSearchResults] = useState<Recipe[]>([])
   const [query, setQuery] = useState('')
   const [loadingMine, setLoadingMine] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [searching, setSearching] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!user) return
-    getUserRecipes(user.uid).then(r => {
-      setMyRecipes(r)
+    // Wait for auth to finish loading
+    if (authLoading) return
+    // Auth done but no user — stop loading
+    if (!user) {
       setLoadingMine(false)
-    })
-  }, [user])
+      return
+    }
+    setLoadingMine(true)
+    setLoadError(null)
+    getUserRecipes(user.uid)
+      .then(r => {
+        logger.info('recipes-page', 'loadMyRecipes', `Loaded ${r.length} recipes`)
+        setMyRecipes(r)
+      })
+      .catch(e => {
+        logger.error('recipes-page', 'loadMyRecipes', 'Failed to load recipes', e)
+        setLoadError(String(e))
+      })
+      .finally(() => setLoadingMine(false))
+  }, [user, authLoading])
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -32,9 +48,15 @@ export default function RecipesPage() {
     }
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
-      const results = await searchRecipes(query)
-      setSearchResults(results)
-      setSearching(false)
+      try {
+        const results = await searchRecipes(query)
+        setSearchResults(results)
+      } catch (e) {
+        logger.error('recipes-page', 'searchRecipes', 'Search failed', e)
+        setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
     }, 400)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
@@ -87,10 +109,31 @@ export default function RecipesPage() {
       {/* My recipes */}
       <div>
         <h2 className="text-sm font-semibold text-gray-400 mb-2">{t('recipes.myRecipes')}</h2>
-        {loadingMine ? (
-          <p className="text-gray-500 text-sm animate-pulse">{t('dashboard.loading')}</p>
+        {loadingMine || authLoading ? (
+          <div className="flex items-center gap-2 text-gray-500 text-sm py-2">
+            <div className="w-4 h-4 border-2 border-gray-600 border-t-emerald-500 rounded-full animate-spin" />
+            <span>{t('dashboard.loading')}</span>
+          </div>
+        ) : loadError ? (
+          <div className="bg-red-900/20 border border-red-800/50 rounded-xl px-4 py-3">
+            <p className="text-red-400 text-sm">Error al cargar recetas: {loadError}</p>
+            <button
+              onClick={() => { setLoadingMine(true); getUserRecipes(user!.uid).then(setMyRecipes).finally(() => setLoadingMine(false)) }}
+              className="text-red-300 text-xs mt-1 underline"
+            >
+              Reintentar
+            </button>
+          </div>
         ) : myRecipes.length === 0 ? (
-          <p className="text-gray-500 text-sm">{t('recipes.noRecipes')}</p>
+          <div className="bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-6 text-center">
+            <p className="text-gray-400 text-sm mb-3">{t('recipes.noRecipes')}</p>
+            <button
+              onClick={() => router.push('/dashboard/recipes/new')}
+              className="bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+            >
+              + {t('recipes.new')}
+            </button>
+          </div>
         ) : (
           <div className="space-y-2">
             {myRecipes.map(r => <RecipeCard key={r.id} recipe={r} />)}
@@ -108,7 +151,12 @@ export default function RecipesPage() {
           placeholder={t('recipes.search')}
           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-600"
         />
-        {searching && <p className="text-gray-500 text-sm mt-2 animate-pulse">{t('dashboard.loading')}</p>}
+        {searching && (
+          <div className="flex items-center gap-2 text-gray-500 text-sm mt-2">
+            <div className="w-3 h-3 border-2 border-gray-600 border-t-emerald-500 rounded-full animate-spin" />
+            <span>{t('dashboard.loading')}</span>
+          </div>
+        )}
         {!searching && query.trim() && searchResults.length === 0 && (
           <p className="text-gray-500 text-sm mt-2">{t('recipes.noResults')}</p>
         )}
