@@ -12,6 +12,20 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.8] - 2026-03-28
+
+### Fixed
+- Community food: nutrition values were stored as-entered (per serving) but the whole app treats `nutrition` as per-100g
+  - `addCommunityFood()` now normalizes values: `value_per_100g = (value / servingSize) * 100`
+  - e.g. yogurt 170g → 150 kcal is saved as ~88 kcal/100g, not 150 kcal/100g
+  - Fix applies to both the `/add/custom-food` page and the `AddFoodModal` (both call `addCommunityFood`)
+
+### Added
+- Custom food form: live per-100g preview panel — when serving size ≠ 100, shows the normalized values (kcal, protein, carbs, fat) so the user can verify the conversion
+- Custom food form: clarified label "por X{unit} (1 porción)" and helper text explaining to enter values from the nutrition label
+
+---
+
 ## [1.18.7] - 2026-03-27
 
 ### Fixed

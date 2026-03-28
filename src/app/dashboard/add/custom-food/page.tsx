@@ -33,7 +33,7 @@ export default function AddCustomFoodPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
@@ -49,6 +49,16 @@ export default function AddCustomFoodPage() {
       cholesterol: 0,
     },
   })
+
+  // Watch live values for the per-100g preview
+  const watchedValues = watch()
+  const servingSize = Number(watchedValues.servingSize) || 100
+  const ratio = servingSize > 0 ? 100 / servingSize : 1
+  const showPer100Preview = servingSize !== 100
+
+  function per100(val: number) {
+    return Math.round(val * ratio * 10) / 10
+  }
 
   async function onSubmit(values: FormValues) {
     if (!user) return
@@ -84,15 +94,15 @@ export default function AddCustomFoodPage() {
     'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors'
   const labelClass = 'block text-gray-400 text-xs mb-1'
 
-  const NUTRITION_FIELDS: [keyof FormValues, string][] = [
-    ['calories', 'kcal'],
-    ['protein', 'g'],
-    ['carbs', 'g'],
-    ['fat', 'g'],
-    ['fiber', 'g'],
-    ['sugar', 'g'],
-    ['sodium', 'mg'],
-    ['cholesterol', 'mg'],
+  const NUTRITION_FIELDS: [keyof FormValues, string, string][] = [
+    ['calories', 'kcal', 'Calorías'],
+    ['protein', 'g', 'Proteína'],
+    ['carbs', 'g', 'Carbs'],
+    ['fat', 'g', 'Grasa'],
+    ['fiber', 'g', 'Fibra'],
+    ['sugar', 'g', 'Azúcar'],
+    ['sodium', 'mg', 'Sodio'],
+    ['cholesterol', 'mg', 'Colesterol'],
   ]
 
   return (
@@ -173,17 +183,22 @@ export default function AddCustomFoodPage() {
 
         {/* Nutrition info */}
         <div className="bg-gray-800/50 rounded-2xl p-4 space-y-4 border border-gray-700">
-          <p className="text-white font-medium text-sm">
-            {t('communityFood.nutrition')}
-            <span className="text-gray-400 font-normal ml-1 text-xs">({t('communityFood.perServing')})</span>
-          </p>
+          <div>
+            <p className="text-white font-medium text-sm">
+              {t('communityFood.nutrition')}
+              <span className="text-gray-400 font-normal ml-1 text-xs">
+                — por {servingSize}{watchedValues.unit !== 'piece' && watchedValues.unit !== 'cup' ? watchedValues.unit : ''} (1 porción)
+              </span>
+            </p>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Ingresa los valores tal como aparecen en la etiqueta nutricional de tu producto.
+            </p>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {NUTRITION_FIELDS.map(([field, unit]) => (
+            {NUTRITION_FIELDS.map(([field, unit, label]) => (
               <div key={field}>
-                <label className={labelClass}>
-                  {t(`communityFood.fields.${field}`)} ({unit})
-                </label>
+                <label className={labelClass}>{label} ({unit})</label>
                 <input
                   {...register(field)}
                   type="number"
@@ -194,6 +209,28 @@ export default function AddCustomFoodPage() {
               </div>
             ))}
           </div>
+
+          {/* Per-100g preview when serving size ≠ 100 */}
+          {showPer100Preview && (
+            <div className="bg-gray-900/60 border border-gray-600 rounded-xl px-4 py-3">
+              <p className="text-gray-400 text-xs mb-2">
+                ℹ️ Se guardará normalizado a <span className="text-white font-medium">por 100{watchedValues.unit !== 'piece' && watchedValues.unit !== 'cup' ? watchedValues.unit : ''}</span>:
+              </p>
+              <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                {[
+                  { label: 'Kcal', value: per100(Number(watchedValues.calories) || 0), color: 'text-emerald-400' },
+                  { label: 'Proteína', value: `${per100(Number(watchedValues.protein) || 0)}g`, color: 'text-blue-400' },
+                  { label: 'Carbs', value: `${per100(Number(watchedValues.carbs) || 0)}g`, color: 'text-yellow-400' },
+                  { label: 'Grasa', value: `${per100(Number(watchedValues.fat) || 0)}g`, color: 'text-orange-400' },
+                ].map(m => (
+                  <div key={m.label} className="bg-gray-800 rounded-lg py-1.5">
+                    <p className={`font-bold ${m.color}`}>{m.value}</p>
+                    <p className="text-gray-500">{m.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (

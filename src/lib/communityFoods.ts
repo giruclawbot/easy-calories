@@ -75,15 +75,19 @@ export async function addCommunityFood(
   const id = crypto.randomUUID()
   const searchTerms = buildSearchTerms(data.name, data.brand)
 
+  // Normalize nutrition to per-100g so the rest of the app scales correctly.
+  // The user enters values for their serving size (e.g. 170g yogurt = 150 kcal).
+  // We convert: value_per_100g = (value / servingSize) * 100
+  const ratio = data.servingSize > 0 ? 100 / data.servingSize : 1
   const nutrition: NutritionFacts = {
-    calories: data.calories,
-    protein: data.protein,
-    carbs: data.carbs,
-    fat: data.fat,
-    fiber: data.fiber,
-    sugar: data.sugar,
-    sodium: data.sodium,
-    cholesterol: data.cholesterol,
+    calories:    Math.round(data.calories    * ratio * 10) / 10,
+    protein:     Math.round(data.protein     * ratio * 10) / 10,
+    carbs:       Math.round(data.carbs       * ratio * 10) / 10,
+    fat:         Math.round(data.fat         * ratio * 10) / 10,
+    fiber:       Math.round(data.fiber       * ratio * 10) / 10,
+    sugar:       Math.round(data.sugar       * ratio * 10) / 10,
+    sodium:      Math.round(data.sodium      * ratio * 10) / 10,
+    cholesterol: Math.round(data.cholesterol * ratio * 10) / 10,
   }
 
   const food = {
