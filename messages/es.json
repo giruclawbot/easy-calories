@@ -316,5 +316,24 @@
     "cancel": "Cancelar",
     "noIngredientSearch": "Sin resultados. Intenta otro término.",
     "servingsToAdd": "Porciones a agregar"
+  },
+  "communityList": {
+    "title": "Alimentos Comunidad",
+    "tabAll": "Todos",
+    "tabMine": "Mis alimentos",
+    "tabVerified": "Verificados",
+    "empty": "Sin alimentos en esta categoría",
+    "emptyMine": "Aún no has agregado alimentos",
+    "badgeVerified": "✅ Verificado",
+    "badgePoor": "⚠️ Dudoso",
+    "edit": "Editar",
+    "deleteConfirm": "¿Eliminar este alimento? No se puede deshacer.",
+    "deleteSuccess": "Alimento eliminado",
+    "editTitle": "Editar alimento",
+    "saveChanges": "Guardar cambios",
+    "saved": "¡Cambios guardados!",
+    "notAuthorized": "No tienes permiso para editar este alimento",
+    "add": "Agregar alimento",
+    "navLabel": "Comunidad"
   }
 }

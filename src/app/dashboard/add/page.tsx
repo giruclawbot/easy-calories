@@ -104,6 +104,14 @@ export default function AddFoodPage() {
         🍳 {t('recipes.addShortcut')}
       </Link>
 
+      {/* Community Foods shortcut */}
+      <Link
+        href="/dashboard/community"
+        className="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-3 rounded-xl transition-colors"
+      >
+        🍎 {t('communityList.navLabel')}
+      </Link>
+
       {/* Quick Add section */}
       {user && <QuickAdd uid={user.uid} onAdd={handleAdd} mealType={selectedMealType} />}
 

@@ -40,6 +40,9 @@ export function NavBar({ user }: { user: User }) {
           <Link href="/profile" className="text-gray-400 hover:text-white transition-colors text-sm">
             👤 {t('nav.profile')}
           </Link>
+          <Link href="/dashboard/community" className="text-gray-400 hover:text-white transition-colors text-sm">
+            🍎 {t('communityList.navLabel')}
+          </Link>
           <button
             onClick={handleSignOut}
             className="text-sm text-gray-400 hover:text-white transition-colors"

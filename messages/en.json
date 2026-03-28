@@ -316,5 +316,24 @@
     "cancel": "Cancel",
     "noIngredientSearch": "No results. Try another term.",
     "servingsToAdd": "Servings to add"
+  },
+  "communityList": {
+    "title": "Community Foods",
+    "tabAll": "All",
+    "tabMine": "My foods",
+    "tabVerified": "Verified",
+    "empty": "No foods in this category",
+    "emptyMine": "You haven't added any foods yet",
+    "badgeVerified": "✅ Verified",
+    "badgePoor": "⚠️ Questionable",
+    "edit": "Edit",
+    "deleteConfirm": "Delete this food? This cannot be undone.",
+    "deleteSuccess": "Food deleted",
+    "editTitle": "Edit food",
+    "saveChanges": "Save changes",
+    "saved": "Changes saved!",
+    "notAuthorized": "You don't have permission to edit this food",
+    "add": "Add food",
+    "navLabel": "Community"
   }
 }

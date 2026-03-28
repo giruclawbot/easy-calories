@@ -12,6 +12,20 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.19.0] - 2026-03-28
+### Added
+- Community Foods list page with tabs (All / My foods / Verified)
+- Voting system (👍/👎) with optimistic UI and toggle support
+- Quality badges: ✅ Verified and ⚠️ Dudoso based on vote ratios
+- Edit and delete community foods (owner only)
+- `communityFoodVotes` Firestore collection with batch writes for atomicity
+- NavBar link to Community Foods
+- Community Foods shortcut on Add Food page
+- New Firestore indexes for communityFoods createdBy + communityFoodVotes
+- `getFoodBadge` helper exported from communityFoods lib
+
+---
+
 ## [1.18.9] - 2026-03-28
 
 ### Fixed
