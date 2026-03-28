@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Prevent iOS Safari from zooming in on input focus.
+ * iOS zooms when font-size < 16px — this forces 16px minimum on all inputs,
+ * then visually scales down with transform so the UI looks the same.
+ */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+  font-size: 16px !important;
+}

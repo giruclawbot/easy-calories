@@ -12,6 +12,16 @@ _(Add new changes here during development)_
 
 ---
 
+## [1.18.9] - 2026-03-28
+
+### Fixed
+- iOS Safari/PWA: auto-zoom on input focus removed
+  - Added `viewport` export with `maximumScale: 1, userScalable: false` in `layout.tsx`
+  - Added `font-size: 16px !important` on all input/select/textarea in `globals.css` (iOS zooms when font-size < 16px)
+  - Both fixes together ensure no zoom on any device
+
+---
+
 ## [1.18.8] - 2026-03-28
 
 ### Fixed
