@@ -146,8 +146,6 @@ _(Add new changes here during development)_
 - Firestore rules for recipes collection
 - i18n keys for recipes in es.json and en.json
 
-_(Add new changes here during development)_
-
 ---
 
 ## [1.17.0] - 2026-03-27
@@ -382,12 +380,6 @@ _(Add new changes here during development)_
 ### Changed
 - Goals: localStorage is now a cache layer, Firestore is the source of truth
 - CalorieCalculator: deficit now uses rate-based approach (slow/moderate/fast)
-
----
-
-## [Unreleased]
-
-_(Add new changes here during development)_
 
 ---
 
