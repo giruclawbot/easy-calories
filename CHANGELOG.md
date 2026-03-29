@@ -6,6 +6,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.1] - 2026-03-29
+
+### Added
+- Landing page: auto-detects browser language via `navigator.language` — renders in English or Spanish with zero extra dependencies
+
 ## [1.20.0] - 2026-03-29
 
 ### Added
