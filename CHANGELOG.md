@@ -6,6 +6,12 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.20.0] - 2026-03-29
+
+### Added
+- Full landing page for ezcals.dev with hero, stats, features grid, how-it-works, spotlights, PWA section, CTA and footer
+- Authenticated users are redirected to /dashboard on page load
+
 ## [Unreleased]
 
 _(Add new changes here during development)_
